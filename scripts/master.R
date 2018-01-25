@@ -57,6 +57,8 @@ colnames(gi_data) <- gsub(grep_pattern2, '', colnames(gi_data))
 
 
 #Remove non well-measured strains
+well_measured <- gi_data[, grep('HetDipl', colnames(gi_data))] >= 100
+gi_data <- gi_data[well_measured,]
 
 
 #For troubleshooting/checking
@@ -93,34 +95,33 @@ dev.off()
 
 
 #Preserve at this step for differential gi_calls
-setwd(this.dir)
-setwd('../results')
-
-Cairo::CairoPDF(file = 'gis_well_measured_vs_non.pdf',
-                width = 4,
-                height = 3.5)
-par(mar=c(4,4,3,1))
 gi_data_old <- gi_data
-plot(density(as.matrix(
-  gi_data_old %>% filter(C_xy.HetDipl >= 100, Chromosomal_distance_bp == 0) %>% select(grep('^GIS_xy.', colnames(gi_data_old)))
-)), xlim = c(-1.1, 0.5),lwd=2,col='red',xlab='GIS',main='GIS of Same-Same Pairs')
-lines(density(as.matrix(
-  gi_data_old %>% filter(C_xy.HetDipl < 100, Chromosomal_distance_bp == 0) %>% select(grep('^GIS_xy.', colnames(gi_data_old)))
-)),
-col='blue',
-lwd='2'
-)
-legend(-0.1,3,
-       legend=c(expression(C[xy]>=100),
-                expression(C[xy]<100)),
-       col=c('red','blue'),
-       pch=15)
-dev.off()
+
+#reviewer plot
+# setwd(this.dir)
+# setwd('../results')
+# Cairo::CairoPDF(file = 'gis_well_measured_vs_non.pdf',
+#                 width = 4,
+#                 height = 3.5)
+# par(mar=c(4,4,3,1))
+# plot(density(as.matrix(
+#   gi_data_old %>% filter(C_xy.HetDipl >= 100, Chromosomal_distance_bp == 0) %>% dplyr::select(grep('^GIS_xy.', colnames(gi_data_old)))
+# )), xlim = c(-1.1, 0.5),lwd=2,col='red',xlab='GIS',main='GIS of Same-Same Pairs')
+# lines(density(as.matrix(
+#   gi_data_old %>% filter(C_xy.HetDipl < 100, Chromosomal_distance_bp == 0) %>% dplyr::select(grep('^GIS_xy.', colnames(gi_data_old)))
+# )),
+# col='blue',
+# lwd='2'
+# )
+# legend(-0.1,3,
+#        legend=c(expression(C[xy]>=100),
+#                 expression(C[xy]<100)),
+#        col=c('red','blue'),
+#        pch=15)
+# dev.off()
 
 
 #Add filter for well-measured
-well_measured <- gi_data[, grep('HetDipl', colnames(gi_data))] >= 100
-gi_data <- gi_data[well_measured,]
 
 
 #Make AUC plot
@@ -363,7 +364,7 @@ write.table(
 setwd(this.dir)
 setwd('../results')
 ddr_data <- filter(gi_data, Type_of_gene_x != "Neutral", Type_of_gene_y != "Neutral")
-genes <- unique(c(filtdat$Barcode_x,filtdat$Barcode_y))
+genes <- unique(c(ddr_data$Barcode_x,filtdat$Barcode_y))
 differential_count <-
   sapply(genes, function(gene) {
     return(nrow(
