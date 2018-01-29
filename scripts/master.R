@@ -1,42 +1,30 @@
-################################################################
-################################################################
-################################################################
-########                                                ########
-########                                                ########
-########     Pipeline for update of BFG-GI data         ########
-########                                                ########
-########                                                ########
-########                                                ########
-################################################################
-################################################################
-################################################################
+##################################################################
+##################################################################
+##################################################################
+########                                                  ########
+########                                                  ########
+######## Pipeline to calculate Genetic Interaction Scores ########
+######## from Barcode Fusion Genetics experiments         ########
+######## and stastical evaluation of condition-dependent  ########
+######## genetic interactions                             ########         
+########                                                  ########
+########                                                  ########
+########                                                  ########
+##################################################################
+##################################################################
+
+
 require(Cairo)
 require(qvalue)
 require(dplyr)
 
-#Needs to be run from source, not Rscript or this line won't work
-this_dir <- function() {
-  cmdArgs <- commandArgs(trailingOnly = FALSE)
-  needle <- "--file="
-  match <- grep(needle, cmdArgs)
-  if (length(match) > 0) {
-    # Rscript
-    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
-  } else {
-    # 'source'd via R console
-    return(dirname(sys.frame(1)$ofile))
-  }
-}
 
-
-
-this.dir <- this_dir()
+#Needs to be run from same directory as script for it to work
+this.dir <- getwd()
 setwd(this.dir)
-
 
 devtools::load_all('../packages/BfgGiStats')
 devtools::document('../packages/BfgGiStats')
-
 
 setwd('../data')
 
@@ -49,14 +37,10 @@ gi_data <-
 gi_data <- gi_data[, -grep('^C_', colnames(gi_data))]
 
 
-#Update removal criteria to 100kb
-gi_data[gi_data$Chromosomal_distance_bp <= 75000 &
-          !is.na(gi_data$Chromosomal_distance_bp), 'Remove_by_Chromosomal_distance_or_SameGene'] <-
-  'YES'
 
 #Can change this to look at only one of the two technical replicates, analyzes the sum by default
 #Change  to 'R1' or 'R2' to look at one of the two only
-to_analyze <- 'R1'
+to_analyze <- 'sum'
 
 grep_pattern1 <- sprintf('^C_xy.*%s', to_analyze)
 grep_pattern2 <- sprintf('.%s', to_analyze)
@@ -71,8 +55,10 @@ gi_data <-
 colnames(gi_data) <- gsub(grep_pattern2, '', colnames(gi_data))
 
 
-
-
+#Update linkage removal criteria to 75kb
+gi_data[gi_data$Chromosomal_distance_bp <= 75000 &
+          !is.na(gi_data$Chromosomal_distance_bp), 'Remove_by_Chromosomal_distance_or_SameGene'] <-
+  'YES'
 #Remove non well-measured strains
 well_measured <- gi_data[, grep('HetDipl', colnames(gi_data))] >= 100
 gi_data <- gi_data[well_measured,]
@@ -106,8 +92,8 @@ Cairo::CairoPDF(file = 'GIS_NoDrug_vs_distance.pdf',
 par(mar=c(4.5,4.5,1,1))
 plot(log10(gi_data$Chromosomal_distance_bp + 1),
      gi_data$GIS_xy.NoDrug,
-     xlab = expression(Log[10](Chromosomal~distance~+1)),
-     ylab = expression(GIS[xy]),
+     xlab = expression(Log[10](Chromosomal~dist.~+1)),
+     ylab = expression(GIS[xy]~(no~Drug)),
      pch = 16,
      col=rgb(0,0,0,0.3))
 abline(v= log10(75001),col='red',lty=3,lwd=2)
@@ -134,12 +120,10 @@ dev.off()
 gi_data <- gi_data[, -grep('CMPT', colnames(gi_data))]
 
 
-
 #Preserve at this step for differential gi_calls
 gi_data_old <- gi_data
 
-## Reviewer plot, have to temporarily allow non well-measured
-## strains for it to work
+## Reviewer plot, have to temporarily allow non well-measured for this plot to work
 # setwd(this.dir)
 # setwd('../results')
 # Cairo::CairoPDF(file = 'gis_well_measured_vs_non.pdf',
@@ -273,15 +257,22 @@ write.table(
 
 ##Make/write differential calls
 ##Make differential calls, reporting everything
-par(mfrow = c(7, 7))
+
+setwd(this.dir)
+setwd('../results')
+Cairo::CairoPDF(file = 'delta_z_distribution.pdf',
+                width = 12,
+                height = 12)
+par(mfrow = c(6, 6))
 par(mar = c(3, 2, 4, 1))
 differential_calls <- differential_gi_analysis(
   gi_data,
   #Report everything
   fdr_cutoff = 1.1,
-  require_sign_change = F
-  #make_plots = T
+  require_sign_change = F,
+  make_plots = T
 )
+dev.off()
 
 setwd(this.dir)
 setwd('../data/output')
@@ -314,7 +305,11 @@ differential_calls_sig <- differential_gi_analysis(
 
 #Write some data
 setwd(this.dir)
-setwd('../data/output')
+
+setwd('../data')
+dir.create('output', showWarnings = FALSE)
+setwd('output')
+
 write.table(
   differential_calls_sig,
   row.names = F,
@@ -371,3 +366,6 @@ hist(
   main = ''
 )
 dev.off()
+
+#For re-running
+setwd(this.dir)
