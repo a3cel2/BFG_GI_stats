@@ -114,13 +114,14 @@ add_p_values <- function(gi_data,
       common_breaks <-
         hist(non_nn_scores_cond, breaks = 100, plot = F)$breaks
       
+      cond_name <- strsplit(condition,split='\\.')[[1]][2]
       
       line_range <- (-200:200) / 10
       hist(
         non_nn_scores_cond,
         breaks = common_breaks,
-        main = condition,
-        xlab = 'Z_GIS score',
+        main = bquote(Z[GIS] ~  distribution ~ .(cond_name)),
+        xlab = expression(Z[GIS]~score),
         freq = F,
         add = F,
         col = rgb(1, 0, 0, 0.7),
@@ -255,7 +256,7 @@ update_calls <- function(gi_data,
     fdr_cols <- grep('^FDR', colnames(gi_data), val = T)
   }
   for(i in 1:length(z_score_cols)){
-    gi_data[,z_class_cols[i]] <- "NEUTRAL"
+    gi_data[,z_class_cols[i]] <- "Expected"
     
     neg_crit <- gi_data[,fdr_cols[i]] <= fdr_cutoff_neg & 
       gi_data[,z_score_cols[i]] < z_cutoff_neg & 
@@ -272,8 +273,8 @@ update_calls <- function(gi_data,
     #  neg_crit <- gi_data[,z_score_cols[i]] < z_cutoff_neg
     #  pos_crit <- gi_data[,z_score_cols[i]] > z_cutoff_pos
     #}
-    gi_data[neg_crit,z_class_cols[i]] <- "AGGRAVATING"
-    gi_data[pos_crit,z_class_cols[i]] <- "ALLEVIATING"
+    gi_data[neg_crit,z_class_cols[i]] <- "Negative"
+    gi_data[pos_crit,z_class_cols[i]] <- "Positive"
   }
   
   return(gi_data)

@@ -8,7 +8,7 @@ precision_vs_stonge(gi_data, control_name = "NoDrug",
   condition_name = "MMS", fdr_prefix = "FDR.neutral_xy",
   z_prefix = "Z_GIS_xy", gi_prefix = "GIS_xy", fdr_cutoff = 0.05,
   metr = "prec", xlims = c(-5, 5), xlab = expression("-Log"[10] *
-  "(q"["neutral"] * ")"), ylab = "St.Onge Validation Rate (\%)",
+  "(FDR"["neutral"] * ")"), ylab = "St.Onge Validation Rate (\%)",
   draw_cutoffs = T, cutoffs_drawn = NULL)
 }
 \arguments{

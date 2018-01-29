@@ -216,7 +216,7 @@ differential_gi_analysis <- function(gi_data,
         
        # print(fdrs_pos)
         
-       hist(fdr_scores,main=paste(c(condition1,condition2),collapse=' - '))
+       # hist(fdr_scores,main=paste(c(condition1,condition2),collapse=' - '))
        
        
        fdr_scores <- qvalue(fdr_scores)$q

@@ -63,6 +63,8 @@ average_gi_data_by_gene <- function(gi_data,type_column_grep = 'Type_of_gene'){
       z_class_columns <- grep('Class',grep('^Z_GIS',colnames(gi_data),val=T),val=T,invert=F)
       fdr_columns <- grep('^FDR',colnames(gi_data))
       
+      
+      
       new_gis <- sapply(1:length(gis_columns),function(i){
         var_weights <- 1/(testset[,err_columns[i]]^2)
         #var_weights <- rep(1,length(testset[,err_columns[i]]))

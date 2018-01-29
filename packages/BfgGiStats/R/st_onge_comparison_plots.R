@@ -33,7 +33,7 @@ precision_vs_stonge <- function(gi_data,
                                   fdr_cutoff = 0.05,
                                   metr = 'prec',
                                   xlims = c(-5,5),
-                                  xlab = expression('-Log'[10]*'(q'['neutral']*')'),
+                                  xlab = expression('-Log'[10]*'(FDR'['neutral']*')'),
                                   ylab = 'St.Onge Validation Rate (%)',
                                   draw_cutoffs = T,
                                   cutoffs_drawn = NULL) {

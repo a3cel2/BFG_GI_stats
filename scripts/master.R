@@ -14,8 +14,25 @@ require(Cairo)
 require(qvalue)
 require(dplyr)
 
-this.dir <- dirname(parent.frame(2)$ofile)
+#Needs to be run from source, not Rscript or this line won't work
+this_dir <- function() {
+  cmdArgs <- commandArgs(trailingOnly = FALSE)
+  needle <- "--file="
+  match <- grep(needle, cmdArgs)
+  if (length(match) > 0) {
+    # Rscript
+    return(dirname(normalizePath(sub(needle, "", cmdArgs[match]))))
+  } else {
+    # 'source'd via R console
+    return(dirname(sys.frame(1)$ofile))
+  }
+}
+
+
+
+this.dir <- this_dir()
 setwd(this.dir)
+
 
 devtools::load_all('../packages/BfgGiStats')
 devtools::document('../packages/BfgGiStats')
@@ -68,10 +85,16 @@ gi_data <- gi_data[well_measured,]
 gi_data <- update_gis(gi_data,
                          #These values are empirically determined and have to be
                          #in the same order as in gi_data count columns
-                         g_wt_vec = c(12.62, 8.34, 7.84, 7.5, 6.94, 6.28, 7.76, 7.04, 7.7, 8.44))
-
-#Remove camptothecin
-gi_data <- gi_data[, -grep('CMPT', colnames(gi_data))]
+                         g_wt_vec = c('NoDrug' = 12.62,
+                                      'DMSO' = 8.34,
+                                      'MMS' = 7.84,
+                                      '4NQO' = 7.5,
+                                      'BLMC' = 6.94,
+                                      'ZEOC' = 6.28,
+                                      'HYDX' = 7.76,
+                                      'DXRB' = 7.04,
+                                      'CMPT' = 7.7,
+                                      'CSPL' = 8.44))
 
 
 #Add p values columns
@@ -91,13 +114,16 @@ gi_data <-
   )
 dev.off()
 
+#Remove camptothecin
+gi_data <- gi_data[, -grep('CMPT', colnames(gi_data))]
 
 
 
 #Preserve at this step for differential gi_calls
 gi_data_old <- gi_data
 
-#reviewer plot
+## Reviewer plot, have to temporarily allow non well-measured
+## strains for it to work
 # setwd(this.dir)
 # setwd('../results')
 # Cairo::CairoPDF(file = 'gis_well_measured_vs_non.pdf',
@@ -121,9 +147,6 @@ gi_data_old <- gi_data
 # dev.off()
 
 
-#Add filter for well-measured
-
-
 #Make AUC plot
 setwd(this.dir)
 setwd('../results')
@@ -143,15 +166,13 @@ par(mfrow = c(1, 2))
 st_onge_scatterplot(gi_data)
 dev.off()
 
-#stop()
 
 ########
 #Calculate a per-gene GI score, Z score, and p value
 ########
 gi_data <- average_gi_data_by_gene(gi_data)
 
-
-
+#Make sure p-value distribution looks sane
 Cairo::CairoPDF(file = 'gene_averaged_p_value_histogram.pdf',
                 width = 5.5,
                 height = 4.5)
@@ -167,7 +188,6 @@ gi_data[, grep('^FDR', colnames(gi_data))] <-
   apply(gi_data[, grep('^FDR', colnames(gi_data))], 2, function(x) {
     qvalue(x)$q
   })
-
 
 #Make St Onge MCC and precision plot
 # setwd(this.dir)
@@ -258,14 +278,14 @@ dev.off()
 
 
 
-#Update calls based on optimal cutoffs
+#Update calls based on 1% FDR cutoffs
 gi_data <- update_calls(
   gi_data,
-  fdr_cutoff_pos = 0.01,#10 ^ -2,#optim_cutoffs[2],
+  fdr_cutoff_pos = 0.01,
   #log_fdr_cutoff_pos,
   gi_cutoff_pos = 0,
   #-gi_cutoff_pos,
-  fdr_cutoff_neg = 0.01,#10 ^ -2,#optim_cutoffs[1],
+  fdr_cutoff_neg = 0.01,
   #log_fdr_cutoff_neg,
   gi_cutoff_neg = 0
 )
@@ -324,15 +344,15 @@ write.table(
   file = 'table_s2_all.tsv'
 )
 
-#Plot some null distributions
-setwd(this.dir)
-setwd('../results')
-Cairo::CairoPDF(file = 'delta_gi_distribution.pdf',
-                width = 5,
-                height = 3)
-par(mar = c(4, 4, 1, 1))
-differential_calls_histogram(differential_calls)
-dev.off()
+# Was seeing how different null distributions behaved
+# setwd(this.dir)
+# setwd('../results')
+# Cairo::CairoPDF(file = 'delta_gi_distribution.pdf',
+#                 width = 5,
+#                 height = 3)
+# par(mar = c(4, 4, 1, 1))
+# differential_calls_histogram(differential_calls)
+# dev.off()
 
 
 #Filter for significance
@@ -364,7 +384,7 @@ write.table(
 setwd(this.dir)
 setwd('../results')
 ddr_data <- filter(gi_data, Type_of_gene_x != "Neutral", Type_of_gene_y != "Neutral")
-genes <- unique(c(ddr_data$Barcode_x,filtdat$Barcode_y))
+genes <- unique(c(ddr_data$Barcode_x,ddr_data$Barcode_y))
 differential_count <-
   sapply(genes, function(gene) {
     return(nrow(
@@ -383,7 +403,7 @@ hist(
   ylab = 'Frequency (number of genes)',
   main = ''
 )
-dev.off()
+dev.off() 
 
 
 reversal_count <-
