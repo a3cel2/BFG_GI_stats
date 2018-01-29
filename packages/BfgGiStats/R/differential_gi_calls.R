@@ -2,12 +2,13 @@
 #'
 #' @param gi_data processed genetic interaction data
 #' @param fdr_cutoff false discovery rate cutoff for calling significant GI changes
-#' @param require_sign_change require different GI classifications to call a differential interaction; True or False
+#' @param require_sign_change require different GI classifications in order to call a differential interaction; True or False
 #' @param nn_pair_type null distribution" of GI scores used to
 #' compute FDR.  Either 'broad' for all interactions with neutral
 #' pairs or 'narrow' for only neutral-neutral pairs
+#' @param make_plots make histogram of Z scores while executing?
 #'
-#' @return a data frame with differential genetic interaction comparisons
+#' @return a data frame with differential genetic interaction comparisons, conditions pairs sorted in alphabetical order
 differential_gi_analysis <- function(gi_data,
                                      fdr_cutoff = 0.05,
                                      delta_gi_cutoff = 0,
@@ -138,11 +139,11 @@ differential_gi_analysis <- function(gi_data,
         }
         
         
+        #Hacky loop
         unequal_tests <- c(`>=`, `<=`)
         precision_list <- lapply(unequal_tests, function(unequal_test) {
           mu <- mean(nn_scores_cond)
           sigma <- sd(nn_scores_cond)
-          #sapply(1:length(non_nn_scores_cond), function(i) {
           sapply(1:length(all_scores_cond), function(i) {
             observed <-
               sum(unequal_test(all_scores_cond, all_scores_cond[i]))
@@ -151,82 +152,42 @@ differential_gi_analysis <- function(gi_data,
             } else{
               use_lower_tail <- F
             }
-            
-            #Using normal distribuion to calculate expected
-            expected <-
+
+            p_val <-
               pnorm(
-                #non_nn_scores_cond[i],
                 all_scores_cond[i],
                 mean = mu,
                 sd = sigma,
                 lower.tail = use_lower_tail
-              )#*length(all_scores_cond)
+              )
             
-            #return(expected)
-            
-            #if(sign(all_scores_cond[i]) == 1){
-            #  expected <- empPvals(all_scores_cond[i],nn_scores_cond)
-            #}else{
-            #  expected <- empPvals(-all_scores_cond[i],-nn_scores_cond)
-            #}
-            #expected <- empPvals(all_scores_cond[i],nn_scores_cond)
-            
-            
-            #expected <- max(sum(unequal_test(nn_scores_cond, all_scores_cond[i])),1)
-            #expected <- expected/length(nn_scores_cond)
-            #expected <- expected*length(all_scores_cond)
-            
-            #/length(all_scores_cond)
-            #expected <- max(expected, 1/length(all_scores_cond))
-            
-            #observed <- sum(unequal_test(all_scores_cond, all_scores_cond[i]))
-            
-            #fdr <- expected/observed
-            
-            #print(expected)
-            #
-            
-            #
-            #expected <- expected * length(all_scores_cond)
-            
-            return(min(c(expected,1 - expected))*2)
-            
-            #fdr <- (expected /(expected + observed))
-            
-            #fdr <- max(fdr, 1/length(nn_scores_cond))
-            
-            #return(fdr)
-            #No sense returning fdr estimates >100%
-            #return(min(fdr, 1))
+            #Two-tailed p values
+            return(min(c(p_val,1 - p_val))*2)
           })
         })
-        fdrs_pos <- precision_list[[1]]
-        fdrs_neg <- precision_list[[2]]
-        comb_fdr <- cbind(fdrs_pos, fdrs_neg)
+        p_values_pos <- precision_list[[1]]
+        p_values_neg <- precision_list[[2]]
+        comb_p_values <- cbind(p_values_pos, p_values_pos)
         
-        #Return positive or negative FDRs based on the nominal sign
+        #Return positive or negative p-value based on the nominal sign
         #of the interaction
-        fdr_scores <- sapply(1:nrow(comb_fdr), function(i) {
+        p_values <- sapply(1:nrow(comb_p_values), function(i) {
           if (all_scores_cond[i] < 0) {
-            return(fdrs_neg[i])
+            return(p_values_neg[i])
           } else{
-            return(fdrs_pos[i])
+            return(p_values_pos[i])
           }
         })
         
-       # print(fdrs_pos)
-        
-       # hist(fdr_scores,main=paste(c(condition1,condition2),collapse=' - '))
-       
-       
-       fdr_scores <- qvalue(fdr_scores)$q
+       fdr_scores <- qvalue(p_values)$q
         
         if(require_sign_change){
           sig <- (fdr_scores < fdr_cutoff) & (gi_data[,z_class_name1] != gi_data[,z_class_name2]) & (abs(all_gi_scores_cond) >= delta_gi_cutoff)
         }else{
           sig <- (fdr_scores < fdr_cutoff) & (abs(all_gi_scores_cond) >= delta_gi_cutoff)
         }
-
+        
+        #Used to report only for DDR pairs, now reporting all
         ddr_data <- gi_data[,]#gi_data[ddr_pairs,]
         
         sig_names <- apply(ddr_data[which(sig),1:2],1,function(x){paste(x,collapse='_')})
@@ -235,7 +196,7 @@ differential_gi_analysis <- function(gi_data,
         
         
         
-        retvec <- cbind(ddr_data[which(sig),c("Barcode_x","Barcode_y")],
+        retvec <- cbind(ddr_data[which(sig),c("Gene_x","Gene_y")],
                         rep(condition1,sum(sig)),
                         rep(condition2,sum(sig)),
                         ddr_data[which(sig),c("Type_of_gene_x","Type_of_gene_y")],
@@ -248,8 +209,8 @@ differential_gi_analysis <- function(gi_data,
         
         colnames(retvec) <-
           c(
-            'Barcode_x',
-            'Barcode_y',
+            'Gene_x',
+            'Gene_y',
             'Condition1',
             'Condition2',
             'Type_of_gene_x',
@@ -272,162 +233,49 @@ differential_gi_analysis <- function(gi_data,
   return(ret_df)
 }
 
-# 
-# differential_calls_by_gene <- function(differential_calls, fdr_cutoff = 0.05) {
-#   Gene1 <-
-#     sapply(differential_calls$Barcode_x, function(name) {
-#       strsplit(name, split = '_')[[1]][1]
-#     })
-#   
-#   Gene2 <-
-#     sapply(differential_calls$Barcode_y, function(name) {
-#       strsplit(name, split = '_')[[1]][1]
-#     })
-#   
-#   
-#   differential_calls <- cbind(differential_calls, Gene1, Gene2)
-#   
-#   #differential_calls$Gene1 <- as.character(differential_calls$Gene1)
-#   #differential_calls$Gene2 <- as.character(differential_calls$Gene2)
-#   #rownames(differential_calls) <- NULL
-#   
-#   #grouped_calls <- differential_calls %>% group_by(Gene1,Gene2)#,Condition1,Condition2)
-#   
-#   #grouped_xndices <- attributes(grouped_calls)$indices
-#   
-#   split_calls <-
-#     split(
-#       differential_calls,
-#       list(
-#         Gene1,
-#         Gene2,
-#         differential_calls$Condition1,
-#         differential_calls$Condition2
-#       )
+# A histogram function for diagnosis, no longer used
+# differential_calls_histogram <- function(differential_calls){
+#   orig_hist <-
+#     hist(
+#       differential_calls$DeltaZ,
+#       breaks = 300,
+#       freq = F,
+#       border = NA,
+#       col = rgb(0, 0, 0, 0.7),
+#       xlim = c(-20, 20),
+#       main = '',
+#       xlab = '∆Z',
+#       ylim=c(0,0.3)
 #     )
 #   
-#   ret_df <- c()
-#   for (i in 1:length(split_calls)) {
-#     #print(i)
-#     gene_calls <- split_calls[[i]]
-#     if (nrow(gene_calls) > 0) {
-#       n_diff <-
-#         sum(gene_calls$Class_Condition1 != gene_calls$Class_Condition2)
-#       all_same_direction <-
-#         length(unique(gene_calls$Class_Condition1) == 1) &
-#         length(unique(gene_calls$Class_Condition2) == 1)
-#       max_fdr <- max(gene_calls$DeltaZ_FDR)
-#       mean_Z_Condition1 <- mean(gene_calls$Z_Condition1)
-#       mean_Z_Condition2 <- mean(gene_calls$Z_Condition2)
-#       mean_DeltaZ <- mean(gene_calls$DeltaZ)
-#       
-#       if (max_fdr < fdr_cutoff) {
-#         call <- 'DIFFERENTIAL'
-#       } else{
-#         call <- 'NON_DIFFERENTIAL'
-#       }
-#       
-#       
-#       #Merge the directions by consensus
-#       call_count_cond1 <- table(gene_calls$Class_Condition1)
-#       call_count_cond2 <- table(gene_calls$Class_Condition2)
-#       
-#       m1 <- max(call_count_cond1)
-#       m2 <- max(call_count_cond2)
-#       
-#       consensus_class1 <- names(which(call_count_cond1 == m1))
-#       consensus_class2 <- names(which(call_count_cond2 == m2))
-#       
-#       if (length(consensus_class1) > 1) {
-#         consensus_class1 <- 'AMBIGUOUS'
-#       }
-#       if (length(consensus_class2) > 1) {
-#         consensus_class2 <- 'AMBIGUOUS'
-#       }
-#       
-#       info <-
-#         gene_calls[1, c(
-#           'Gene1',
-#           'Gene2',
-#           'Condition1',
-#           'Condition2',
-#           'Class_Condition1',
-#           'Class_Condition2'
-#         )]
-#       info <- apply(info, 2, as.character)
-#       
-#       info <- c(info, mean_Z_Condition1)
-#       info <- c(info, mean_Z_Condition2)
-#       info <- c(info, mean_DeltaZ)
-#       info <- c(info, max_fdr)
-#       info <- c(info, call)
-#       
-#       names(info)[(length(info) - 6):length(info)] <-
-#         c(
-#           'Consensus_Class_Condition1',
-#           'Consensus_Class_Condition2',
-#           'mean_Z_Condition1',
-#           'mean_Z_Condition2',
-#           'mean_DeltaZ',
-#           'Max_FDR',
-#           'Call'
-#         )
-#       info$Consensus_Class_Condition1 <- consensus_class1
-#       info$Consensus_Class_Condition2 <- consensus_class2
-#       
-#       ret_df <- rbind(ret_df, unlist(info))
-#     }
-#   }
+#   hist(
+#     as.matrix(
+#       filter(
+#         differential_calls,
+#         Class_Condition1 == "Expected" &
+#           Class_Condition2 == "Expected"
+#       )$DeltaZ
+#     ),
+#     breaks = orig_hist$breaks,
+#     add = T,
+#     col = rgb(1, 0, 0, 0.5),
+#     freq = FALSE,
+#     border = NA
+#   )
 #   
-#   ret_df <- as.data.frame(ret_df)
-#   return(ret_df)
+#   hist(
+#     as.matrix(
+#       filter(
+#         differential_calls,
+#         Type_of_gene_x == 'Neutral' |
+#           Type_of_gene_y == 'Neutral'
+#       )$DeltaZ
+#     ),
+#     add = T,
+#     col = rgb(0, 0, 1, 0.5),
+#     freq = F,
+#     border = NA,
+#     breaks = orig_hist$breaks
+#   )
+#   legend('topleft',legend=c('All pairs','non-DDR Pairs','neutral GI pairs'),col=c('grey30','blue','red'),pch=15)
 # }
-
-
-differential_calls_histogram <- function(differential_calls){
-  orig_hist <-
-    hist(
-      differential_calls$DeltaZ,
-      breaks = 300,
-      freq = F,
-      border = NA,
-      col = rgb(0, 0, 0, 0.7),
-      xlim = c(-20, 20),
-      main = '',
-      xlab = '∆Z',
-      ylim=c(0,0.3)
-    )
-  
-  hist(
-    as.matrix(
-      filter(
-        differential_calls,
-        Class_Condition1 == "NEUTRAL" &
-          Class_Condition2 == "NEUTRAL"# &
-          #Type_of_gene_x != 'Neutral' &
-          #Type_of_gene_y != 'Neutral'
-      )$DeltaZ
-    ),
-    breaks = orig_hist$breaks,
-    add = T,
-    col = rgb(1, 0, 0, 0.5),
-    freq = FALSE,
-    border = NA
-  )
-  
-  hist(
-    as.matrix(
-      filter(
-        differential_calls,
-        Type_of_gene_x == 'Neutral' |
-          Type_of_gene_y == 'Neutral'
-      )$DeltaZ
-    ),
-    add = T,
-    col = rgb(0, 0, 1, 0.5),
-    freq = F,
-    border = NA,
-    breaks = orig_hist$breaks
-  )
-  legend('topleft',legend=c('All pairs','non-DDR Pairs','neutral GI pairs'),col=c('grey30','blue','red'),pch=15)
-}

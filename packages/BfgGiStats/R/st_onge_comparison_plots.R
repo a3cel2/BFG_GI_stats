@@ -216,7 +216,7 @@ st_onge_auc_plot <- function(gi_data,
       gi_data_filtered[, st_onge_class] == 'AGGRAVATING'
     
     if(old_data == F){
-      scores_cond <- sign(gi_data_filtered[,z_column])*-log10(gi_data_filtered[,fdr_column])
+      scores_cond <- gi_data_filtered[,z_column]
     }else if(old_data == T){
       scores_cond <- gi_data_filtered[,gi_column]
     }

@@ -12,14 +12,16 @@ differential_gi_analysis(gi_data, fdr_cutoff = 0.05, delta_gi_cutoff = 0,
 
 \item{fdr_cutoff}{false discovery rate cutoff for calling significant GI changes}
 
-\item{require_sign_change}{require different GI classifications to call a differential interaction; True or False}
+\item{require_sign_change}{require different GI classifications in order to call a differential interaction; True or False}
 
 \item{nn_pair_type}{null distribution" of GI scores used to
 compute FDR.  Either 'broad' for all interactions with neutral
 pairs or 'narrow' for only neutral-neutral pairs}
+
+\item{make_plots}{make histogram of Z scores while executing?}
 }
 \value{
-a data frame with differential genetic interaction comparisons
+a data frame with differential genetic interaction comparisons, conditions pairs sorted in alphabetical order
 }
 \description{
 Differential Genetic Interaction analysis

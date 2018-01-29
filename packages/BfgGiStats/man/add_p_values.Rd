@@ -11,11 +11,11 @@ add_p_values(gi_data, nn_pair_type = "broad", z_grep_pattern = "^Z_GIS",
 \item{gi_data}{input genetic interaction table}
 
 \item{nn_pair_type}{"null distribution" of GI scores used to
-compute FDR.Either 'broad' for all interactions with neutral
+compute p-values. Either 'broad' for all interactions with neutral
 pairs or 'narrow' for only neutral-neutral pairs}
 }
 \value{
-gi_data with 'FDR.internal' metrics added
+gi_data with p values added
 }
 \description{
 Adds p-value columns to the genetic interaction data

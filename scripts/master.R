@@ -97,6 +97,22 @@ gi_data <- update_gis(gi_data,
                                       'CSPL' = 8.44))
 
 
+#Analyze linkage patterns to justify above removal criteria
+setwd(this.dir)
+setwd('../results')
+Cairo::CairoPDF(file = 'GIS_NoDrug_vs_distance.pdf',
+                width = 4,
+                height = 4)
+par(mar=c(4.5,4.5,1,1))
+plot(log10(gi_data$Chromosomal_distance_bp + 1),
+     gi_data$GIS_xy.NoDrug,
+     xlab = expression(Log[10](Chromosomal~distance~+1)),
+     ylab = expression(GIS[xy]),
+     pch = 16,
+     col=rgb(0,0,0,0.3))
+abline(v= log10(75001),col='red',lty=3,lwd=2)
+dev.off()
+
 #Add p values columns
 setwd(this.dir)
 setwd('../results')
@@ -131,10 +147,10 @@ gi_data_old <- gi_data
 #                 height = 3.5)
 # par(mar=c(4,4,3,1))
 # plot(density(as.matrix(
-#   gi_data_old %>% filter(C_xy.HetDipl >= 100, Chromosomal_distance_bp == 0) %>% dplyr::select(grep('^GIS_xy.', colnames(gi_data_old)))
+#   gi_data_old %>% dplyr::filter(C_xy.HetDipl >= 100, Chromosomal_distance_bp == 0) %>% dplyr::select(grep('^GIS_xy.', colnames(gi_data_old)))
 # )), xlim = c(-1.1, 0.5),lwd=2,col='red',xlab='GIS',main='GIS of Same-Same Pairs')
 # lines(density(as.matrix(
-#   gi_data_old %>% filter(C_xy.HetDipl < 100, Chromosomal_distance_bp == 0) %>% dplyr::select(grep('^GIS_xy.', colnames(gi_data_old)))
+#   gi_data_old %>% dplyr::filter(C_xy.HetDipl < 100, Chromosomal_distance_bp == 0) %>% dplyr::select(grep('^GIS_xy.', colnames(gi_data_old)))
 # )),
 # col='blue',
 # lwd='2'
@@ -176,94 +192,30 @@ gi_data <- average_gi_data_by_gene(gi_data)
 Cairo::CairoPDF(file = 'gene_averaged_p_value_histogram.pdf',
                 width = 5.5,
                 height = 4.5)
-hist(as.matrix(gi_data[, grep('^FDR', colnames(gi_data))]),
+hist(as.matrix(gi_data[, grep('^P.neutral', colnames(gi_data))]),
      main = '',
      xlab = 'p-value',
      col = 'grey30')
 dev.off()
 
 
+
 #Calculate FDR from per-gene p values
-gi_data[, grep('^FDR', colnames(gi_data))] <-
-  apply(gi_data[, grep('^FDR', colnames(gi_data))], 2, function(x) {
+gi_data[, grep('^P.neutral', colnames(gi_data))] <-
+  apply(gi_data[, grep('^P.neutral', colnames(gi_data))], 2, function(x) {
     qvalue(x)$q
   })
 
-#Make St Onge MCC and precision plot
-# setwd(this.dir)
-# setwd('../results')
-# 
-# 
-# performance_data <- gi_data
-# performance_data[, grep('^FDR', colnames(performance_data))] <-
-#   -log10(performance_data[, grep('^FDR', colnames(performance_data))]) *
-#   sign(performance_data[, grep('^GI', colnames(performance_data))])
-# performance_vs_st_onge <- make_performance_matrix(performance_data)
-# 
-# 
-# Cairo::CairoPDF(file = 'pos_perf_vs_st_onge.pdf',
-#                 width = 5,
-#                 height = 4)
-# #Plots and stores which values are best MCC
-# optim_pos <- performance_heatmap(
-#   performance_vs_st_onge$positive_interactions,
-#   xlab = '-Log10(FDR) Threshold',
-#   ylab = 'GIS Threshold',
-#   min_val = 0.5,
-#   max_val = 0.7,
-#   highlight_max_vals = T,
-#   add_legend = T,
-#   legend_title = 'MCC',
-#   main = 'MCC vs St. Onge (positive GIs)'
-# )[1, , drop = F]
-# dev.off()
-# 
-# Cairo::CairoPDF(file = 'neg_perf_vs_st_onge.pdf',
-#                 width = 5,
-#                 height = 4)
-# optim_neg <- performance_heatmap(
-#   performance_vs_st_onge$negative_interactions,
-#   xlab = '-Log10(FDR) Threshold',
-#   ylab = 'GIS Threshold',
-#   min_val = 0.5,
-#   max_val = 0.7,
-#   highlight_max_vals = T,
-#   add_legend = T,
-#   legend_title = 'MCC',
-#   main = 'MCC vs St. Onge (negative GIs)'
-# )[1, , drop = F]
-# dev.off()
-# 
-# 
-# ##Get cutoffs from performance matrix
-# log_fdr_cutoff_neg <-
-#   as.numeric(rownames(performance_vs_st_onge$negative_interactions)[optim_neg[1]])
-# gi_cutoff_neg <-
-#   as.numeric(colnames(performance_vs_st_onge$negative_interactions)[optim_neg[2]])
-# 
-# log_fdr_cutoff_pos <-
-#   as.numeric(rownames(performance_vs_st_onge$positive_interactions)[optim_pos[1]])
-# gi_cutoff_pos <-
-#   as.numeric(colnames(performance_vs_st_onge$positive_interactions)[optim_pos[2]])
-# 
+fdr_colnames <-
+  sapply(grep('P.neut', colnames(gi_data), val = T), function(x) {
+    gsub('^P.', 'FDR.', x)
+  })
 
+colnames(gi_data)[grep('^P.neutral', colnames(gi_data))] <- fdr_colnames
 
 
 setwd(this.dir)
 setwd('../results')
-# Cairo::CairoPDF(file = 'gi_mcc_vs_st_onge.pdf',
-#                 width = 4.5,
-#                 height = 4)
-# optim_cutoffs <-
-#   precision_vs_stonge(
-#     gi_data,
-#     fdr_cutoff = 0.05,
-#     metr = 'mat',
-#     xlims = c(-4, 4),
-#     ylab = "Matthew's Correlation Coefficient"
-#   )
-# dev.off()
-
 Cairo::CairoPDF(file = 'gi_prec_vs_st_onge.pdf',
                 width = 4.5,
                 height = 4)
@@ -276,23 +228,20 @@ precision_vs_stonge(
 dev.off()
 
 
-
-
 #Update calls based on 1% FDR cutoffs
+#No effect sizes used, but option exists
 gi_data <- update_calls(
   gi_data,
   fdr_cutoff_pos = 0.01,
-  #log_fdr_cutoff_pos,
   gi_cutoff_pos = 0,
-  #-gi_cutoff_pos,
   fdr_cutoff_neg = 0.01,
-  #log_fdr_cutoff_neg,
   gi_cutoff_neg = 0
 )
 
 
 
 #Make gene-wise scatterplot
+#Manuscript uses barcode-wise plot
 Cairo::CairoPDF(file = 'st_onge_scatterplot_genewise.pdf',
                 width = 7.5,
                 height = 3.5)
@@ -301,7 +250,7 @@ st_onge_scatterplot(gi_data)
 dev.off()
 
 
-###Write data
+###Write some data
 setwd(this.dir)
 setwd('../data')
 dir.create('output', showWarnings = FALSE)
@@ -344,18 +293,8 @@ write.table(
   file = 'table_s2_all.tsv'
 )
 
-# Was seeing how different null distributions behaved
-# setwd(this.dir)
-# setwd('../results')
-# Cairo::CairoPDF(file = 'delta_gi_distribution.pdf',
-#                 width = 5,
-#                 height = 3)
-# par(mar = c(4, 4, 1, 1))
-# differential_calls_histogram(differential_calls)
-# dev.off()
 
-
-#Filter for significance
+#Filter for significance and sign change
 differential_calls_sig <- differential_gi_analysis(
   gi_data,
   fdr_cutoff = 0.01,
@@ -363,14 +302,17 @@ differential_calls_sig <- differential_gi_analysis(
   require_sign_change = T
 )
 
-differential_calls_sig_no_sign <- differential_gi_analysis(
-  gi_data,
-  fdr_cutoff = 0.01,
-  delta_gi_cutoff = 0,
-  require_sign_change = F
-)
+#Can compare what happens if no sign change enforced
+#differential_calls_sig_no_sign <- differential_gi_analysis(
+#  gi_data,
+#  fdr_cutoff = 0.01,
+#  delta_gi_cutoff = 0,
+#  require_sign_change = F
+#)
 
 
+
+#Write some data
 setwd(this.dir)
 setwd('../data/output')
 write.table(
@@ -381,15 +323,17 @@ write.table(
   file = 'table_s2_significant.tsv'
 )
 
+
+#Looks at frequency of differetial calls by gene
 setwd(this.dir)
 setwd('../results')
-ddr_data <- filter(gi_data, Type_of_gene_x != "Neutral", Type_of_gene_y != "Neutral")
-genes <- unique(c(ddr_data$Barcode_x,ddr_data$Barcode_y))
+ddr_data <- dplyr::filter(gi_data, Type_of_gene_x != "Neutral", Type_of_gene_y != "Neutral")
+genes <- unique(c(ddr_data$Gene_x,ddr_data$Gene_y))
 differential_count <-
   sapply(genes, function(gene) {
     return(nrow(
-      filter(differential_calls_sig, Barcode_x == gene |
-               Barcode_y == gene)
+      dplyr::filter(differential_calls_sig, Gene_x == gene |
+               Gene_y == gene)
     ))
   })
 Cairo::CairoPDF(file = 'differential_inters_by_gene.pdf',
@@ -406,11 +350,12 @@ hist(
 dev.off() 
 
 
+#Look at only sign reversals
 reversal_count <-
   sapply(genes, function(gene) {
     return(nrow(
-      filter(differential_calls_sig, Barcode_x == gene |
-               Barcode_y == gene, Class_Condition1 != "NEUTRAL", Class_Condition2 != "NEUTRAL")
+      dplyr::filter(differential_calls_sig, Gene_x == gene |
+               Gene_y == gene, Class_Condition1 != "Expected", Class_Condition2 != "Expected")
     ))
   })
 
