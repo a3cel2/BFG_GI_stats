@@ -44,7 +44,6 @@ to_analyze <- c('R1','R2')
 
 
 
-
 #Update linkage removal criteria to 75kb
 gi_data_original[gi_data_original$Chromosomal_distance_bp <= 75000 &
           !is.na(gi_data_original$Chromosomal_distance_bp), 'Remove_by_Chromosomal_distance_or_SameGene'] <-
