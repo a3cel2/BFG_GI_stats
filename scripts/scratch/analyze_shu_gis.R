@@ -30,11 +30,11 @@ shu_complex <- c('CSM2','PSY3','SHU2','SHU1')
 
 
 
-gi_data$gene1 <- sapply(gi_data$Barcode_x, function(x) {
+gi_data$gene1 <- sapply(gi_data$Gene_x, function(x) {
     strsplit(x, split = '_')[[1]][1]
   })
 
-gi_data$gene2 <- sapply(gi_data$Barcode_y, function(x) {
+gi_data$gene2 <- sapply(gi_data$Gene_y, function(x) {
   strsplit(x, split = '_')[[1]][1]
 })
 
@@ -44,7 +44,7 @@ gi_data$gene2 <- sapply(gi_data$Barcode_y, function(x) {
 gi_data$Pair <- sapply(1:length(gi_data$gene1),function(i){
   paste(sort(c(gi_data$gene1[i],gi_data$gene2[i])),collapse='_')
 })
-#gi_data$Barcode_j <- gene2
+#gi_data$Gene_j <- gene2
 
 
 #gi_data <- gi_data %>% group_by(Pair) %>% select(c(1,2,grep('^GIS', colnames(gi_data)))) %>% summarize_each(funs(p_combine))
@@ -65,7 +65,7 @@ mag1_data <-
     gene1 %in% c(shu_complex, 'SLX4') &
       gene2 == 'MAG1' |
       gene2 %in% c(shu_complex, 'SLX4') & gene1 == 'MAG1'
-  )
+  ) 
 
 stop()
 mag1_data <-

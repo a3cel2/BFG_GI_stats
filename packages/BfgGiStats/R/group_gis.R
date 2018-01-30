@@ -243,7 +243,10 @@ average_gi_data_by_gene <-
     
     #Averaging count data doesn't really make sense
     gi_data_grp <-
-      gi_data_grp[, grep(count_column_grep, names(gi_data_grp), invert = T)]
+      gi_data_grp[, grep(count_column_grep, colnames(gi_data_grp), invert = T)]
+    #Samples are averaged too
+    gi_data_grp <- gi_data_grp[, grep("Sample", colnames(gi_data_grp), invert =T)]
+    
     
     colnames(gi_data_grp)[1:2] <- c('Gene_x', 'Gene_y')
     

@@ -114,9 +114,9 @@ differential_gi_analysis <- function(gi_data,
             freq = F,
             border = NA,
             col = rgb(1, 0, 0, 0.5),
-            xlab = '∆Z',
-            ylab = '',
-            main = paste(c(condition1,condition2),collapse=' - '),
+            xlab = bquote(Delta~ Z[GIS] ~ .(condition1) - ~.(condition2)),#expression(Delta~Z[GIS]),
+            ylab = 'Density',
+            main = '',#paste(c(condition1,condition2),collapse=' - '),
             ylim = c(0, max(
               c(first_hist_test$density, second_hist_test$density)
             ))

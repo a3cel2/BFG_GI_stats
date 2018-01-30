@@ -19,7 +19,7 @@ require(qvalue)
 require(dplyr)
 
 
-#Needs to be run from same directory as script for it to work
+#Needs to be called from /scripts directory for this to run
 this.dir <- getwd()
 setwd(this.dir)
 
@@ -29,62 +29,96 @@ devtools::document('../packages/BfgGiStats')
 setwd('../data')
 
 #Read in genetic interaction data from two tables, using sum column from second table
-gi_data <-
+gi_data_original <-
   read.table('table_s1_input.tsv',
              head = T,
              stringsAsFactors = F)
 #Remove count data from first table
-gi_data <- gi_data[, -grep('^C_', colnames(gi_data))]
+gi_data_original <- gi_data_original[, -grep('^C_', colnames(gi_data_original))]
 
 
 
 #Can change this to look at only one of the two technical replicates, analyzes the sum by default
 #Change  to 'R1' or 'R2' to look at one of the two only
-to_analyze <- 'sum'
+to_analyze <- c('R1','R2')
 
-grep_pattern1 <- sprintf('^C_xy.*%s', to_analyze)
-grep_pattern2 <- sprintf('.%s', to_analyze)
 
-gi_data_2 <-
-  read.table('Cxy_Table_WithReplicates.txt',
-             head = T,
-             stringsAsFactors = F)
-gi_data <-
-  cbind(gi_data, gi_data_2[, grep(grep_pattern1, colnames(gi_data_2))])
-#Fix the names
-colnames(gi_data) <- gsub(grep_pattern2, '', colnames(gi_data))
 
 
 #Update linkage removal criteria to 75kb
-gi_data[gi_data$Chromosomal_distance_bp <= 75000 &
-          !is.na(gi_data$Chromosomal_distance_bp), 'Remove_by_Chromosomal_distance_or_SameGene'] <-
+gi_data_original[gi_data_original$Chromosomal_distance_bp <= 75000 &
+          !is.na(gi_data_original$Chromosomal_distance_bp), 'Remove_by_Chromosomal_distance_or_SameGene'] <-
   'YES'
 #Remove non well-measured strains
-well_measured <- gi_data[, grep('HetDipl', colnames(gi_data))] >= 100
-gi_data <- gi_data[well_measured,]
+
+
 
 
 #For troubleshooting/checking
 #gi_data_original <- gi_data
 
 #Change genetic interactions and significance calls
-gi_data <- update_gis(gi_data,
-                         #These values are empirically determined and have to be
-                         #in the same order as in gi_data count columns
-                         g_wt_vec = c('NoDrug' = 12.62,
-                                      'DMSO' = 8.34,
-                                      'MMS' = 7.84,
-                                      '4NQO' = 7.5,
-                                      'BLMC' = 6.94,
-                                      'ZEOC' = 6.28,
-                                      'HYDX' = 7.76,
-                                      'DXRB' = 7.04,
-                                      'CMPT' = 7.7,
-                                      'CSPL' = 8.44))
+doubling_vec <- list(R1 =  c('NoDrug' = 12.24,
+                             'DMSO' = 8.2,
+                             'MMS' = 7.8,
+                             '4NQO' = 7.6,
+                             'BLMC' = 7.12,
+                             'ZEOC' = 6.24,
+                             'HYDX' = 7.92,
+                             'DXRB' = 7.36,
+                             'CMPT' = 7.68,
+                             'CSPL' = 8.48),
+                      R2 = c('NoDrug' = 13,
+                             'DMSO' = 8.47,
+                             'MMS' = 7.88,
+                             '4NQO' = 7.4,
+                             'BLMC' = 6.76,
+                             'ZEOC' = 6.32,
+                             'HYDX' = 7.6,
+                             'DXRB' = 6.72,
+                             'CMPT' = 7.72,
+                             'CSPL' = 8.4))
 
+
+gi_data_combined<- c()
+for(i in 1:length(to_analyze)){
+  analyze_now <- to_analyze[i]
+  
+  grep_pattern1 <- sprintf('^C_xy.*%s', analyze_now)
+  grep_pattern2 <- sprintf('.%s', analyze_now)
+  
+  gi_data_2 <-
+    read.table('Cxy_Table_WithReplicates.txt',
+               head = T,
+               stringsAsFactors = F)
+  gi_data <-
+    cbind(gi_data_original, gi_data_2[, grep(grep_pattern1, colnames(gi_data_2))])
+  colnames(gi_data) <- gsub(grep_pattern2, '', colnames(gi_data))
+  
+  
+  well_measured <- gi_data[, grep('HetDipl', colnames(gi_data))] >= 30
+  gi_data <- gi_data[well_measured,]
+  
+  
+  new_gis <- update_gis(gi_data,
+              #These values are empirically determined and have to be
+              #in the same order as in gi_data count columns
+              g_wt_vec = doubling_vec[[to_analyze[i]]])
+  
+  new_gis <- cbind(new_gis,rep(to_analyze[i],nrow(new_gis)))
+  colnames(new_gis)[ncol(new_gis)] <- 'Sample'
+  
+  new_gis <- new_gis[,c(1:2,ncol(new_gis),3:(ncol(new_gis) - 1))]
+  
+  gi_data_combined <- rbind(gi_data_combined,new_gis)
+  
+}
+
+gi_data <- gi_data_combined
 
 #Analyze linkage patterns to justify above removal criteria
 setwd(this.dir)
+dir.create('../results', showWarnings = FALSE)
 setwd('../results')
 Cairo::CairoPDF(file = 'GIS_NoDrug_vs_distance.pdf',
                 width = 4,
@@ -99,21 +133,20 @@ plot(log10(gi_data$Chromosomal_distance_bp + 1),
 abline(v= log10(75001),col='red',lty=3,lwd=2)
 dev.off()
 
-#Add p values columns
+#Plot z distribution
 setwd(this.dir)
 setwd('../results')
 Cairo::CairoPDF(file = 'Z_distribution.pdf',
-                width = 12,
-                height = 5)
+                width = 10,
+                height = 4)
 par(mfrow = c(2, 5))
 par(mar = c(5, 4, 2, 0))
-gi_data <-
-  add_p_values(
-    gi_data,
-    z_grep_pattern = "^Z_GIS",
-    nn_pair_type = 'broad',
-    make_plots = T
-  )
+gi_data <- add_p_values(
+  gi_data,
+  z_grep_pattern = "^Z_GIS",
+  nn_pair_type = 'broad',
+  make_plots = T
+)
 dev.off()
 
 #Remove camptothecin
@@ -126,25 +159,27 @@ gi_data_old <- gi_data
 ## Reviewer plot, have to temporarily allow non well-measured for this plot to work
 # setwd(this.dir)
 # setwd('../results')
+# cut <- 30
 # Cairo::CairoPDF(file = 'gis_well_measured_vs_non.pdf',
 #                 width = 4,
 #                 height = 3.5)
 # par(mar=c(4,4,3,1))
 # plot(density(as.matrix(
-#   gi_data_old %>% dplyr::filter(C_xy.HetDipl >= 100, Chromosomal_distance_bp == 0) %>% dplyr::select(grep('^GIS_xy.', colnames(gi_data_old)))
+#   gi_data_old %>% dplyr::filter(C_xy.HetDipl >= cut, Chromosomal_distance_bp == 0) %>% dplyr::select(grep('^GIS_xy.', colnames(gi_data_old)))
 # )), xlim = c(-1.1, 0.5),lwd=2,col='red',xlab='GIS',main='GIS of Same-Same Pairs')
 # lines(density(as.matrix(
-#   gi_data_old %>% dplyr::filter(C_xy.HetDipl < 100, Chromosomal_distance_bp == 0) %>% dplyr::select(grep('^GIS_xy.', colnames(gi_data_old)))
+#   gi_data_old %>% dplyr::filter(C_xy.HetDipl < cut, Chromosomal_distance_bp == 0) %>% dplyr::select(grep('^GIS_xy.', colnames(gi_data_old)))
 # )),
 # col='blue',
 # lwd='2'
 # )
 # legend(-0.1,3,
-#        legend=c(expression(C[xy]>=100),
-#                 expression(C[xy]<100)),
+#        legend=c(expression(C[xy]>=30),
+#                 expression(C[xy]<30)),
 #        col=c('red','blue'),
 #        pch=15)
 # dev.off()
+
 
 
 #Make AUC plot
@@ -205,23 +240,23 @@ Cairo::CairoPDF(file = 'gi_prec_vs_st_onge.pdf',
                 height = 4)
 precision_vs_stonge(
   gi_data,
-  fdr_cutoff = 0.05,
-  xlims = c(-4, 4),
+  fdr_cutoff = 0.01,
+  xlims = c(-5, 5),
   cutoffs_drawn = c(2,2)
 )
 dev.off()
 
 
+
 #Update calls based on 1% FDR cutoffs
-#No effect sizes used, but option exists
+#Effect size cutoffs are 
 gi_data <- update_calls(
   gi_data,
   fdr_cutoff_pos = 0.01,
-  gi_cutoff_pos = 0,
-  fdr_cutoff_neg = 0.01,
-  gi_cutoff_neg = 0
+  gi_cutoff_pos = 0.05,#.05,
+  fdr_cutoff_neg = 0.01,#0.01,
+  gi_cutoff_neg = -0.07#.05
 )
-
 
 
 #Make gene-wise scatterplot
@@ -262,9 +297,9 @@ setwd(this.dir)
 setwd('../results')
 Cairo::CairoPDF(file = 'delta_z_distribution.pdf',
                 width = 12,
-                height = 12)
+                height = 10)
 par(mfrow = c(6, 6))
-par(mar = c(3, 2, 4, 1))
+par(mar = c(4, 4, 1, 1))
 differential_calls <- differential_gi_analysis(
   gi_data,
   #Report everything
@@ -289,17 +324,17 @@ write.table(
 differential_calls_sig <- differential_gi_analysis(
   gi_data,
   fdr_cutoff = 0.01,
-  delta_gi_cutoff = 0,
+  delta_gi_cutoff = 0.1,
   require_sign_change = T
 )
 
 #Can compare what happens if no sign change enforced
-#differential_calls_sig_no_sign <- differential_gi_analysis(
-#  gi_data,
-#  fdr_cutoff = 0.01,
-#  delta_gi_cutoff = 0,
-#  require_sign_change = F
-#)
+differential_calls_sig_no_sign <- differential_gi_analysis(
+  gi_data,
+  fdr_cutoff = 0.01,
+  delta_gi_cutoff = 0.1,
+  require_sign_change = F
+)
 
 
 

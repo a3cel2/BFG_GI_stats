@@ -95,16 +95,19 @@ add_p_values <- function(gi_data,
     if (make_plots) {
       mu <- median(nn_scores_cond)
       sigma <- sd(nn_scores_cond)
-      y_limits1 <-
-        hist(nn_scores_cond, breaks = 100, plot = F)$density
       
       
       mu_non_nn <- median(non_nn_scores_cond)
       sigma_non_nn <- sd(non_nn_scores_cond)
-      y_limits2 <-
-        hist(non_nn_scores_cond, breaks = 100, plot = F)$density
       common_breaks <-
         hist(non_nn_scores_cond, breaks = 100, plot = F)$breaks
+      
+      
+      y_limits1 <-
+        hist(nn_scores_cond, breaks = common_breaks, plot = F)$density
+      y_limits2 <-
+        hist(non_nn_scores_cond, breaks = common_breaks, plot = F)$density
+      
       
       cond_name <- strsplit(condition, split = '\\.')[[1]][2]
       
@@ -113,7 +116,7 @@ add_p_values <- function(gi_data,
         non_nn_scores_cond,
         breaks = common_breaks,
         main = bquote(Z[GIS] ~  distribution ~ .(cond_name)),
-        xlab = expression(Z[GIS] ~ score),
+        xlab = expression(Z[GIS]),
         freq = F,
         add = F,
         col = rgb(1, 0, 0, 0.7),

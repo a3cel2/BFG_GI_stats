@@ -9,7 +9,8 @@ precision_vs_stonge(gi_data, control_name = "NoDrug",
   z_prefix = "Z_GIS_xy", gi_prefix = "GIS_xy", fdr_cutoff = 0.05,
   metr = "prec", xlims = c(-5, 5), xlab = expression("-Log"[10] *
   "(FDR"["neutral"] * ")"), ylab = "St.Onge Validation Rate (\%)",
-  draw_cutoffs = T, cutoffs_drawn = NULL)
+  draw_cutoffs = T, gi_cutoff_pos = 0.05, gi_cutoff_neg = -0.07,
+  cutoffs_drawn = NULL)
 }
 \arguments{
 \item{gi_data}{input genetic interaction table}
