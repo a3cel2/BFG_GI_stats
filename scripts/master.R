@@ -206,6 +206,7 @@ dev.off()
 ########
 gi_data <- average_gi_data_by_gene(gi_data)
 
+
 #Make sure p-value distribution looks sane
 Cairo::CairoPDF(file = 'gene_averaged_p_value_histogram.pdf',
                 width = 5.5,
@@ -231,7 +232,7 @@ fdr_colnames <-
 
 colnames(gi_data)[grep('^P.neutral', colnames(gi_data))] <- fdr_colnames
 
-
+#Precision at the 0.05,0.07 GIs cutoffs
 setwd(this.dir)
 setwd('../results')
 Cairo::CairoPDF(file = 'gi_prec_vs_st_onge.pdf',
@@ -244,6 +245,68 @@ precision_vs_stonge(
   cutoffs_drawn = c(2,2)
 )
 dev.off()
+
+
+#Performance heatmaps in precision and recall as a function of FDR and GIS cutoff
+setwd(this.dir)
+setwd('../results')
+
+performance_data <- gi_data
+performance_data[, grep('^FDR', colnames(performance_data))] <-
+  -log10(performance_data[, grep('^FDR', colnames(performance_data))]) *
+  sign(performance_data[, grep('^GI', colnames(performance_data))])
+
+
+prec_vs_st_onge <- make_performance_matrix(performance_data,metr='prec',y_cutoff_vec = c(0:50)/500,
+                                           x_cutoff_vec = c(0:50)/10)
+rec_vs_st_onge <- make_performance_matrix(performance_data,metr='rec',y_cutoff_vec = c(0:50)/500,
+                                          x_cutoff_vec = c(0:50)/10)
+
+perf_data <- list(prec_vs_st_onge,rec_vs_st_onge)
+names(perf_data) <- c('prec','rec')
+directions <- c('positive_interactions','negative_interactions')
+
+for(i in 1:length(perf_data)){
+  for(j in 1:length(directions)){
+    
+    if(names(perf_data)[i] == 'prec'){
+      legend_title <- 'Precision'
+      min_val <- 0.5
+      max_val <- 0.9
+    }else if(names(perf_data)[i] == 'rec'){
+      legend_title <- 'Recall'
+      min_val <- 0.5
+      max_val <- 0.7
+    }
+    
+    if(directions[j] == 'positive_interactions'){
+      main_title <- '(positive GIs)'
+    }else if(directions[j] == 'negative_interactions'){
+      main_title <- '(negative GIs)'
+    }
+    
+    
+    filename <- sprintf('%s vs St. Onge %s.pdf',legend_title,main_title)
+    Cairo::CairoPDF(file = filename,
+                    width = 5,
+                    height = 4)
+    performance_heatmap(
+      perf_data[[i]][[directions[j]]],
+      xlab = '-Log10(FDR) Threshold',
+      ylab = 'GIS Threshold',
+      min_val = min_val,
+      max_val = max_val,
+      highlight_max_vals = F,
+      add_legend = T,
+      legend_title = legend_title,
+      main = sprintf('%s vs St. Onge %s',legend_title,main_title)
+    )
+    dev.off()
+    
+  }
+}
+
+
 
 
 
