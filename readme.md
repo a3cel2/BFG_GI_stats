@@ -50,4 +50,4 @@ The following R packages must be installed prior to running master.R:
 5) ExtDist
 6) qvalue (Bioconductor)
 
-Cairo must also be properly configured to write PDF files.  Otherwise, Cairo::CairoPDF can be replaced with pdf in master.R.  Note that this will not properly write some symbols used in the plot.
+Cairo must also be properly configured to write PDF files.  Otherwise, Cairo::CairoPDF can be replaced with pdf in master.R.  Note that this will not properly write some symbols used in the plotw.
