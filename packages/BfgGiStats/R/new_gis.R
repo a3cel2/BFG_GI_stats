@@ -12,7 +12,7 @@ update_gis <- function(gi_data,
                        #Old parameter, to use only well-measured pairs, no longer needed
                        #well_measured_cutoff = 100,
                        #This defines the number of generations each pool grew
-                       pseudocount = 1e-200,
+                       pseudocount = 1,#e-200,
                        count_data_grep_pattern = '^C_',
                        g_wt_vec) {
   #Define special pairs

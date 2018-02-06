@@ -4,7 +4,7 @@
 \alias{update_gis}
 \title{Update BFG-GI genetic interaction data}
 \usage{
-update_gis(gi_data, pseudocount = 1e-200, count_data_grep_pattern = "^C_",
+update_gis(gi_data, pseudocount = 1, count_data_grep_pattern = "^C_",
   g_wt_vec)
 }
 \arguments{

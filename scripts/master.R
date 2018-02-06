@@ -96,11 +96,11 @@ for(i in 1:length(to_analyze)){
   colnames(gi_data) <- gsub(grep_pattern2, '', colnames(gi_data))
   
   
-  well_measured <- gi_data[, grep('HetDipl', colnames(gi_data))] >= 30
+  well_measured <- gi_data[, grep('HetDipl', colnames(gi_data))] >= 50
   gi_data <- gi_data[well_measured,]
   
-  gi_data <- gi_data[grep('MMS4_donor',gi_data$Barcode_x,invert=T),]
-  gi_data <- gi_data[grep('MUS81_donor',gi_data$Barcode_x,invert=T),]
+  #gi_data <- gi_data[grep('MMS4_donor',gi_data$Barcode_x,invert=T),]
+  #gi_data <- gi_data[grep('MUS81_donor',gi_data$Barcode_x,invert=T),]
   #gi_data <- gi_data[grep('MMS4_recipient',gi_data$Barcode_y,invert=T),]
   #gi_data <- gi_data[grep('MUS81_recipient',gi_data$Barcode_y,invert=T),]
   
