@@ -84,7 +84,7 @@ average_gi_data_by_gene <-
     for (i in 1:length(split_gi_data_grp)) {
       testset <- split_gi_data_grp[[i]]
       
-      print(testset)
+      #print(testset)
       
       if (nrow(testset) > 0) {
         ret_vec <- testset[1,]
