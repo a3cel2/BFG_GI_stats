@@ -23,7 +23,7 @@ average_gi_data_by_gene <-
            type_column_grep = 'Type_of_gene',
            gi_column_grep = '^GIS',
            gi_err_column_grep = '^SE_GIS',
-           fdr_column_grep = '^P.neutra',
+           fdr_column_grep = '^P.neutral',
            z_column_grep = '^Z_GIS',
            w_x_column_grep = '^W_x\\.',
            w_x_err_column_grep = '^W_x_SE\\.',
@@ -84,6 +84,8 @@ average_gi_data_by_gene <-
     for (i in 1:length(split_gi_data_grp)) {
       testset <- split_gi_data_grp[[i]]
       
+      print(testset)
+      
       if (nrow(testset) > 0) {
         ret_vec <- testset[1,]
         
@@ -128,6 +130,8 @@ average_gi_data_by_gene <-
           var_weights <- 1 / (testset[, err_columns[i]] ^ 2)
           
           p_vals <- testset[, fdr_columns[i]]
+          
+          #print(p_vals)
           
           #metap::sumz fails for some reason with one p value...
           if (length(p_vals) == 1) {

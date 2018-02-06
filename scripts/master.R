@@ -45,9 +45,9 @@ to_analyze <- c('R1','R2')
 
 
 #Update linkage removal criteria to 75kb
-gi_data_original[gi_data_original$Chromosomal_distance_bp <= 75000 &
-          !is.na(gi_data_original$Chromosomal_distance_bp), 'Remove_by_Chromosomal_distance_or_SameGene'] <-
-  'YES'
+#gi_data_original[gi_data_original$Chromosomal_distance_bp <= 75000 &
+#          !is.na(gi_data_original$Chromosomal_distance_bp), 'Remove_by_Chromosomal_distance_or_SameGene'] <-
+#  'YES'
 #Remove non well-measured strains
 
 
@@ -79,6 +79,7 @@ doubling_vec <- list(R1 =  c('NoDrug' = 12.24,
                              'CSPL' = 8.4))
 
 
+
 gi_data_combined<- c()
 for(i in 1:length(to_analyze)){
   analyze_now <- to_analyze[i]
@@ -98,11 +99,18 @@ for(i in 1:length(to_analyze)){
   well_measured <- gi_data[, grep('HetDipl', colnames(gi_data))] >= 30
   gi_data <- gi_data[well_measured,]
   
+  #gi_data <- gi_data[grep('MMS4_donor',gi_data$Barcode_x,invert=T),]
+  #gi_data <- gi_data[grep('MUS81_donor',gi_data$Barcode_x,invert=T),]
+  #gi_data <- gi_data[grep('MMS4_recipient',gi_data$Barcode_y,invert=T),]
+  #gi_data <- gi_data[grep('MUS81_recipient',gi_data$Barcode_y,invert=T),]
+  
   
   new_gis <- update_gis(gi_data,
               #These values are empirically determined and have to be
               #in the same order as in gi_data count columns
               g_wt_vec = doubling_vec[[to_analyze[i]]])
+  
+  
   
   new_gis <- cbind(new_gis,rep(to_analyze[i],nrow(new_gis)))
   colnames(new_gis)[ncol(new_gis)] <- 'Sample'
@@ -110,10 +118,14 @@ for(i in 1:length(to_analyze)){
   new_gis <- new_gis[,c(1:2,ncol(new_gis),3:(ncol(new_gis) - 1))]
   
   gi_data_combined <- rbind(gi_data_combined,new_gis)
-  
 }
 
-gi_data <- gi_data_combined
+
+
+#Instead of a poisson error model for double mutant fitness, add a global model for each condition
+gi_data <- update_error_model_by_replicates(gi_data_combined)
+gi_data <- gi_data[, -grep('CMPT', colnames(gi_data))]
+
 
 #Analyze linkage patterns to justify above removal criteria
 setwd(this.dir)
@@ -148,8 +160,6 @@ gi_data <- add_p_values(
 )
 dev.off()
 
-#Remove camptothecin
-gi_data <- gi_data[, -grep('CMPT', colnames(gi_data))]
 
 
 #Preserve at this step for differential gi_calls
@@ -181,16 +191,6 @@ gi_data_old <- gi_data
 
 
 
-#Make AUC plot
-setwd(this.dir)
-setwd('../results')
-
-Cairo::CairoPDF(file = 'auc_vs_st_onge_new.pdf',
-                width = 7.5,
-                height = 4)
-par(mfrow = c(1, 2))
-st_onge_auc_plot(gi_data)
-dev.off()
 
 #Score comparison scatterplot - by barcode
 Cairo::CairoPDF(file = 'st_onge_scatterplot_barcodewise.pdf',
@@ -204,6 +204,8 @@ dev.off()
 ########
 #Calculate a per-gene GI score, Z score, and p value
 ########
+
+
 gi_data <- average_gi_data_by_gene(gi_data)
 
 
@@ -241,8 +243,8 @@ Cairo::CairoPDF(file = 'gi_prec_vs_st_onge.pdf',
 precision_vs_stonge(
   gi_data,
   fdr_cutoff = 0.01,
-  xlims = c(-5, 5),
-  cutoffs_drawn = c(2,2)
+  xlims = c(-0.12, 0.12),
+  cutoffs_drawn = c(0.07,0.05)
 )
 dev.off()
 
@@ -257,10 +259,10 @@ performance_data[, grep('^FDR', colnames(performance_data))] <-
   sign(performance_data[, grep('^GI', colnames(performance_data))])
 
 
-prec_vs_st_onge <- make_performance_matrix(performance_data,metr='prec',y_cutoff_vec = c(0:50)/500,
-                                           x_cutoff_vec = c(0:50)/10)
-rec_vs_st_onge <- make_performance_matrix(performance_data,metr='rec',y_cutoff_vec = c(0:50)/500,
-                                          x_cutoff_vec = c(0:50)/10)
+prec_vs_st_onge <- make_performance_matrix(performance_data,metr='prec',y_cutoff_vec = seq(0,0.1,length.out=50),
+                                           x_cutoff_vec = seq(0,8,length.out=50))
+rec_vs_st_onge <- make_performance_matrix(performance_data,metr='rec',y_cutoff_vec = seq(0,0.1,length.out=50),
+                                          x_cutoff_vec = seq(0,8,length.out=50))
 
 perf_data <- list(prec_vs_st_onge,rec_vs_st_onge)
 names(perf_data) <- c('prec','rec')
@@ -271,12 +273,12 @@ for(i in 1:length(perf_data)){
     
     if(names(perf_data)[i] == 'prec'){
       legend_title <- 'Precision'
-      min_val <- 0.5
+      min_val <- 0.3
       max_val <- 0.9
     }else if(names(perf_data)[i] == 'rec'){
       legend_title <- 'Recall'
-      min_val <- 0.5
-      max_val <- 0.7
+      min_val <- 0.2
+      max_val <- 0.8
     }
     
     if(directions[j] == 'positive_interactions'){
@@ -307,17 +309,27 @@ for(i in 1:length(perf_data)){
 }
 
 
+#Make AUC plot
+setwd(this.dir)
+setwd('../results')
 
+Cairo::CairoPDF(file = 'auc_vs_st_onge_new.pdf',
+                width = 11,
+                height = 4)
+par(mfrow = c(1, 3))
+st_onge_auc_plot(gi_data)
+dev.off()
 
+#stop()
 
 #Update calls based on 1% FDR cutoffs
 #Effect size cutoffs are 
 gi_data <- update_calls(
   gi_data,
-  fdr_cutoff_pos = 0.01,
+  fdr_cutoff_pos = 0.01,#0.01,
   gi_cutoff_pos = 0.05,#.05,
-  fdr_cutoff_neg = 0.01,#0.01,
-  gi_cutoff_neg = -0.07#.05
+  fdr_cutoff_neg = 0.01,#0.01,#0.01,
+  gi_cutoff_neg = -0.08#.05
 )
 
 

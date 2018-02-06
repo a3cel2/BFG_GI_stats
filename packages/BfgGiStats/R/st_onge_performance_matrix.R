@@ -119,8 +119,8 @@ performance_heatmap <- function(mat,
       rgb(0.25, 0.45, 0.8),
       rgb(0.25, 0.75, 1)
     )
-    color_func <- grDevices::terrain.colors#grDevices::colorRampPalette(my_color_list)
-    
+    #color_func <- grDevices::terrain.colors#grDevices::colorRampPalette(my_color_list)
+    color_func <- grDevices::colorRampPalette(c("#000004FF","#51127CFF","#B63679FF","#FB8861FF","#FCFDBFFF"))
   }
   if(is.null(min_val)){
     min_val <- 0.7#min(mat)  
@@ -203,11 +203,11 @@ performance_heatmap <- function(mat,
   if(add_legend){
     plot(NULL,xlim=c(0,1),ylim=c(0,1),main='',axes=F,xlab='',ylab='')
     
-    seqs <- seq(min_val,max_val,length.out=100)
+    seqs <- seq(min_val,max_val,length.out=500)
     
     for(i in 1:length(seqs)){
       fill_col <- map_color(seqs[i],color_func,min_val,max_val)
-      lines(c(-0.5,0),c(i/length(seqs),i/length(seqs)),col=fill_col,lwd=5)
+      lines(c(-0.5,0),c(i/length(seqs),i/length(seqs)),col=fill_col,lwd=1)
       
     }
     

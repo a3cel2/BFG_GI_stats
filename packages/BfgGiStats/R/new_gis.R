@@ -12,9 +12,9 @@ update_gis <- function(gi_data,
                        #Old parameter, to use only well-measured pairs, no longer needed
                        #well_measured_cutoff = 100,
                        #This defines the number of generations each pool grew
-                       pseudocount = 1,
+                       pseudocount = 1e-200,
                        count_data_grep_pattern = '^C_',
-                       g_wt_vec = c(12.62,8.34,8.44,7.04,7.7,7.84,7.5,7.76,6.94,6.28)) {
+                       g_wt_vec) {
   #Define special pairs
   same_same <-
     sapply(gi_data$Barcode_x, function(x) {
@@ -55,22 +55,25 @@ update_gis <- function(gi_data,
   g_xy_error <- abs(r_xy_error/(r_xy_data*log(2)))
   
   #wt fitness estimate and error
-  g_xy_wt <- apply(g_xy_data[nn_pairs,],2,mean)
-  g_wt_error <- apply(g_xy_data[nn_pairs,],2,function(x){sd(x)/sqrt(length(x))})
+  #g_xy_wt <- apply(g_xy_data[nn_pairs,],2,mean)
+  g_xy_wt <- apply(g_xy_data[nn_pairs,],2,median)
+  g_wt_error <- apply(g_xy_data[nn_pairs,],2,function(x){sd(x)})#sqrt(length(x))})
   
   #Normalize fitness by wildtype
   w_xy_data <- t(t(g_xy_data) / g_xy_wt)
   
-  genes <- unique(unlist(gi_data[, 1:2]))
+  barcodes <- unique(unlist(gi_data[, 1:2]))
 
   
   #Using mean now instead of median because
   #otherwise standard deviation doesn't make sense
-  w_xy_single_genes <- t(sapply(genes, function(gene) {
+  
+  
+  w_xy_single_barcodes <- t(sapply(barcodes, function(barcode) {
     criteria <-
-      gi_data[, 1] == gene &
+      gi_data[, 1] == barcode &
       gi_data$Type_of_gene_y == 'Neutral' |
-      gi_data[, 2] == gene & gi_data$Type_of_gene_x == 'Neutral'
+      gi_data[, 2] == barcode & gi_data$Type_of_gene_x == 'Neutral'
     criteria <-
       criteria &
       gi_data$Remove_by_Chromosomal_distance_or_SameGene == 'no'
@@ -80,14 +83,15 @@ update_gis <- function(gi_data,
     #  criteria &
     #  gi_data$C_xy.HetDipl >= well_measured_cutoff
     
-    return(apply(w_xy_data[criteria, ], 2, mean))
+    #return(apply(w_xy_data[criteria, ], 2, mean))
+    return(apply(w_xy_data[criteria, ], 2, median))
   }))
   
-  g_xy_single_genes <- t(sapply(genes, function(gene) {
+  g_xy_single_barcodes <- t(sapply(barcodes, function(barcode) {
     criteria <-
-      gi_data[, 1] == gene &
+      gi_data[, 1] == barcode &
       gi_data$Type_of_gene_y == 'Neutral' |
-      gi_data[, 2] == gene & gi_data$Type_of_gene_x == 'Neutral'
+      gi_data[, 2] == barcode & gi_data$Type_of_gene_x == 'Neutral'
     criteria <-
       criteria &
       gi_data$Remove_by_Chromosomal_distance_or_SameGene == 'no'
@@ -96,16 +100,16 @@ update_gis <- function(gi_data,
     #  criteria &
     #  gi_data$C_xy.HetDipl >= well_measured_cutoff
     
-    return(apply(g_xy_data[criteria, ], 2, mean))
+    return(apply(g_xy_data[criteria, ], 2, median))
   }))
   
   
   #Using standard error of mean as error
-  g_xy_error_single_genes <- t(sapply(genes, function(gene) {
+  g_xy_error_single_barcodes <- t(sapply(barcodes, function(barcode) {
     criteria <-
-      gi_data[, 1] == gene &
+      gi_data[, 1] == barcode &
       gi_data$Type_of_gene_y == 'Neutral' |
-      gi_data[, 2] == gene & gi_data$Type_of_gene_x == 'Neutral'
+      gi_data[, 2] == barcode & gi_data$Type_of_gene_x == 'Neutral'
     criteria <-
       criteria &
       gi_data$Remove_by_Chromosomal_distance_or_SameGene == 'no'
@@ -113,7 +117,7 @@ update_gis <- function(gi_data,
     #criteria <-
     #  criteria &
     #  gi_data$C_xy.HetDipl >= well_measured_cutoff
-    return(apply(g_xy_data[criteria, ], 2, function(x){sd(x)/sqrt(length(x))}))
+    return(apply(g_xy_data[criteria, ], 2, function(x){sd(x)}))#sqrt(length(x))}))
   }))
   
   
@@ -121,8 +125,8 @@ update_gis <- function(gi_data,
   bc2 <- gi_data$Barcode_y
   
   gis <- t(sapply(1:nrow(w_xy_data), function(i) {
-    w_x <- w_xy_single_genes[bc1[i], ]
-    w_y <- w_xy_single_genes[bc2[i], ]
+    w_x <- w_xy_single_barcodes[bc1[i], ]
+    w_y <- w_xy_single_barcodes[bc2[i], ]
     
     w_xy <- w_xy_data[i, ]
     
@@ -153,14 +157,14 @@ update_gis <- function(gi_data,
   gi_uncertainty <- t(sapply(1:nrow(w_xy_data), function(i) {
     
     g_xy <- g_xy_data[i, ]
-    g_x <- g_xy_single_genes[bc1[i], ]
-    g_y <- g_xy_single_genes[bc2[i], ]
+    g_x <- g_xy_single_barcodes[bc1[i], ]
+    g_y <- g_xy_single_barcodes[bc2[i], ]
     g_wt <- g_xy_wt
     
     
     g_xy_error <- g_xy_error[i, ]
-    g_x_error <- g_xy_error_single_genes[bc1[i], ]
-    g_y_error <- g_xy_error_single_genes[bc2[i], ]
+    g_x_error <- g_xy_error_single_barcodes[bc1[i], ]
+    g_y_error <- g_xy_error_single_barcodes[bc2[i], ]
     g_wt_error <- g_wt_error
     
     gis <- (g_xy*g_wt)/(g_x*g_y)
@@ -214,7 +218,7 @@ update_gis <- function(gi_data,
   
   
   w_x_data <- t(sapply(1:nrow(w_xy_data), function(i) {
-    g_x <- g_xy_single_genes[bc1[i], ]
+    g_x <- g_xy_single_barcodes[bc1[i], ]
     g_wt <- g_xy_wt
     w_x <- g_x/g_wt
     w_x[w_x < 0] <- 0
@@ -223,7 +227,7 @@ update_gis <- function(gi_data,
   }))
   
   w_y_data <- t(sapply(1:nrow(w_xy_data), function(i) {
-    g_y <- g_xy_single_genes[bc2[i], ]
+    g_y <- g_xy_single_barcodes[bc2[i], ]
     g_wt <- g_xy_wt
     w_y <- g_y/g_wt
     w_y[w_y < 0] <- 0
@@ -233,9 +237,9 @@ update_gis <- function(gi_data,
   
   
   w_x_error <- t(sapply(1:nrow(w_xy_data), function(i) {
-    g_x <- g_xy_single_genes[bc1[i], ]
+    g_x <- g_xy_single_barcodes[bc1[i], ]
     g_wt <- g_xy_wt
-    g_x_error <- g_xy_error_single_genes[bc1[i], ]
+    g_x_error <- g_xy_error_single_barcodes[bc1[i], ]
     g_wt_error <- g_wt_error
     
     w_x <- g_x/g_wt
@@ -245,9 +249,9 @@ update_gis <- function(gi_data,
   }))
   
   w_y_error <- t(sapply(1:nrow(w_xy_data), function(i) {
-    g_y <- g_xy_single_genes[bc2[i], ]
+    g_y <- g_xy_single_barcodes[bc2[i], ]
     g_wt <- g_xy_wt
-    g_y_error <- g_xy_error_single_genes[bc2[i], ]
+    g_y_error <- g_xy_error_single_barcodes[bc2[i], ]
     g_wt_error <- g_wt_error
     
     
@@ -353,4 +357,94 @@ update_gis <- function(gi_data,
   #gi_data[, z_cols] <- gis / gi_uncertainty
   
   return(gi_data)
+}
+
+
+update_error_model_by_replicates <- function(gi_data_combined){
+  
+  
+  #This is all to make sure we keep same pairs in both
+  r1_data <- dplyr::filter(gi_data_combined, Sample == 'R1')
+  r2_data <- dplyr::filter(gi_data_combined, Sample == 'R2')
+  
+  pairs_r1 <- apply(r1_data[,c('Barcode_x','Barcode_y')],1,function(x){paste(x,collapse='_')})
+  pairs_r2 <- apply(r2_data[,c('Barcode_x','Barcode_y')],1,function(x){paste(x,collapse='_')})
+  
+  r1_data <- cbind(r1_data,pairs_r1)
+  r2_data <- cbind(r2_data,pairs_r2)
+  colnames(r1_data)[ncol(r1_data)] <- 'pair'
+  colnames(r2_data)[ncol(r2_data)] <- 'pair'
+  
+  merged_data <- merge(r1_data,r2_data,by='pair')
+  
+  r1_unmerged_data <- merged_data[,grep('.x$',colnames(merged_data),val=T)]
+  r2_unmerged_data <- merged_data[,grep('.y$',colnames(merged_data),val=T)]
+  
+  colnames(r1_unmerged_data) <- colnames(gi_data_combined)
+  colnames(r2_unmerged_data) <- colnames(gi_data_combined)
+  
+  
+  conditions <- sapply(grep('^GIS',colnames(r1_data),val=T),function(x){strsplit(x,split='\\.')[[1]][2]})
+  
+  #Update double mutant error
+  for(condition in conditions){
+    dm_name <- paste(c('W_xy',condition),collapse='.')
+    err_name <- paste(c('W_xy_SE',condition),collapse='.')
+    
+    r1_unmerged_data[,err_name] <- median(abs(r1_unmerged_data[,dm_name] - r2_unmerged_data[,dm_name]))
+    r2_unmerged_data[,err_name] <- r1_unmerged_data[,err_name]
+  }
+  
+  #Update Z values
+  r1_old <- r1_unmerged_data
+  r2_old <- r2_unmerged_data
+  
+  for(condition in conditions){
+    
+    w_x_col <- paste(c('W_x',condition),collapse='.')
+    w_y_col <- paste(c('W_y',condition),collapse='.')
+    
+    w_x_err_col <- paste(c('W_x_SE',condition),collapse='.')
+    w_y_err_col <- paste(c('W_y_SE',condition),collapse='.')
+    
+    w_xy_err_col <- paste(c('W_xy_SE',condition),collapse='.')
+    
+    gis_col <- paste(c('GIS_xy',condition),collapse='.')
+    gis_err_col <- paste(c('SE_GIS_xy',condition),collapse='.')
+    
+    z_col <- paste(c('Z_GIS_xy',condition),collapse='.')
+    
+    
+    #
+    w_x_r1 <- r1_unmerged_data[ ,w_x_col]
+    w_y_r1 <- r1_unmerged_data[ ,w_y_col]
+    w_x_err_r1 <- r1_unmerged_data[ ,w_x_err_col]
+    w_y_err_r1 <- r1_unmerged_data[ ,w_y_err_col]
+    w_xy_err_r1 <- r1_unmerged_data[ ,w_xy_err_col]
+    
+    
+    w_x_r2 <- r2_unmerged_data[,w_x_col]
+    w_y_r2 <- r2_unmerged_data[,w_y_col]
+    w_x_err_r2 <- r2_unmerged_data[ ,w_x_err_col]
+    w_y_err_r2 <- r2_unmerged_data[ ,w_y_err_col]
+    w_xy_err_r2 <- r2_unmerged_data[ ,w_xy_err_col]
+    
+    w_x_w_y_err_r1 <- abs(w_x_r1*w_y_r1)*sqrt((w_x_err_r1/w_x_r1)^2 + (w_y_err_r1/w_y_r1)^2)
+    w_x_w_y_err_r2 <- abs(w_x_r2*w_y_r2)*sqrt((w_x_err_r2/w_x_r2)^2 + (w_y_err_r2/w_y_r2)^2)
+    
+    updated_gis_error_r1 <- sqrt(w_x_w_y_err_r1^2 + w_xy_err_r1^2)
+    updated_gis_error_r2 <- sqrt(w_x_w_y_err_r2^2 + w_xy_err_r2^2)
+    
+    #updated_gis_error_r1 <- median(abs(r1_unmerged_data[,gis_col] - r2_unmerged_data[,gis_col]))
+    #updated_gis_error_r2 <- median(abs(r1_unmerged_data[,gis_col] - r2_unmerged_data[,gis_col]))
+    
+    r1_unmerged_data[,gis_err_col] <- updated_gis_error_r1
+    r2_unmerged_data[,gis_err_col] <- updated_gis_error_r2
+    
+    r1_unmerged_data[,z_col] <- r1_unmerged_data[,gis_col]/r1_unmerged_data[,gis_err_col]
+    r2_unmerged_data[,z_col] <- r2_unmerged_data[,gis_col]/r2_unmerged_data[,gis_err_col]
+    
+  }
+  
+  return(rbind(r1_unmerged_data,r2_unmerged_data))
 }

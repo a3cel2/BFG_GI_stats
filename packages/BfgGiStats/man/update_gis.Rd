@@ -4,8 +4,8 @@
 \alias{update_gis}
 \title{Update BFG-GI genetic interaction data}
 \usage{
-update_gis(gi_data, pseudocount = 1, count_data_grep_pattern = "^C_",
-  g_wt_vec = c(12.62, 8.34, 8.44, 7.04, 7.7, 7.84, 7.5, 7.76, 6.94, 6.28))
+update_gis(gi_data, pseudocount = 1e-200, count_data_grep_pattern = "^C_",
+  g_wt_vec)
 }
 \arguments{
 \item{gi_data}{input genetic interaction table}

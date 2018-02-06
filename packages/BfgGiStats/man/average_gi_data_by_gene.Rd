@@ -6,7 +6,7 @@
 \usage{
 average_gi_data_by_gene(gi_data, type_column_grep = "Type_of_gene",
   gi_column_grep = "^GIS", gi_err_column_grep = "^SE_GIS",
-  fdr_column_grep = "^P.neutra", z_column_grep = "^Z_GIS",
+  fdr_column_grep = "^P.neutral", z_column_grep = "^Z_GIS",
   w_x_column_grep = "^W_x\\\\.", w_x_err_column_grep = "^W_x_SE\\\\.",
   w_y_column_grep = "^W_y\\\\.", w_y_err_column_grep = "^W_y_SE\\\\.",
   w_xy_column_grep = "^W_xy\\\\.", w_xy_err_column_grep = "^W_xy_SE\\\\.",

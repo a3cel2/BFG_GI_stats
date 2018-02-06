@@ -47,7 +47,7 @@ differential_gi_analysis <- function(gi_data,
   for(condition1 in conditions) {
     ret_list[[condition1]] <- list()
     for (condition2 in conditions) {
-      if (condition1 > condition2) {
+      if (condition1  > condition2) {
         
         
         

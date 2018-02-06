@@ -1,4 +1,4 @@
-Barcode_x	Barcode_y	Epsilon	p(Eps==0)	z(Sxy=Sx)	z(Sxy=Sy)	Congruence	Num_w_GO_Term	Sig_GO_link	Interaction_sign
+Gene_x	Gene_y	Epsilon	p(Eps==0)	z(Sxy=Sx)	z(Sxy=Sy)	Congruence	Num_w_GO_Term	Sig_GO_link	Interaction_sign
 RAD52	HPR5	0.001066	9.71E-01	-1.649368	-8.801234	0.091037	28	1	neutral
 RAD55	RAD59	0.001635	9.57E-01	-1.935617	-3.207931	0.631962	11	1	neutral
 RAD57	RAD59	0.008533	7.73E-01	-2.156403	-3.812875	0.749735	14	1	neutral

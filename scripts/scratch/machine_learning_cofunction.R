@@ -17,7 +17,7 @@ gi_data[,1:2] <- t(apply(gi_data[,1:2],1,function(x){
 gi_data <- gi_data[,grep('CMPT',colnames(gi_data),invert=T)]
 
 
-merged_data <- merge(gi_data,st_onge_data,by=c('Barcode_x','Barcode_y'))
+merged_data <- merge(gi_data,st_onge_data,by=c('Gene_x','Gene_y'))
 
 conditions <- gsub('GIS_xy.','',grep('^GIS',colnames(merged_data),val=T))
 
@@ -41,37 +41,45 @@ colnames(z_y) <- sapply(conditions,function(condition){
 
 
 
-calculate_congruence <- function(cl,merged_data,gi_name){
+calculate_congruence <- function(cl,merged_data,gi_names){
   parApply(cl, merged_data, 1, function(x) {
-    gene1 <- x['Barcode_x']
-    gene2 <- x['Barcode_y']
+    gene1 <- x['Gene_x']
+    gene2 <- x['Gene_y']
     
     gene1_data <-
-      dplyr::filter(merged_data, Barcode_x == gene1 | Barcode_y == gene1)
+      dplyr::filter(merged_data, Gene_x == gene1 | Gene_y == gene1)
     gene2_data <-
-      dplyr::filter(merged_data, Barcode_x == gene2 | Barcode_y == gene2)
+      dplyr::filter(merged_data, Gene_x == gene2 | Gene_y == gene2)
     
     gene1_partners <- apply(gene1_data, 1, function(x) {
-      x <- x[c('Barcode_x', 'Barcode_y')]
+      x <- x[c('Gene_x', 'Gene_y')]
       return(x[(x != gene1)])
     })
     gene2_partners <- apply(gene2_data, 1, function(x) {
-      x <- x[c('Barcode_x', 'Barcode_y')]
+      x <- x[c('Gene_x', 'Gene_y')]
       return(x[(x != gene2)])
     })
     
     common_partners <- intersect(gene1_partners, gene2_partners)
     
-    gene1_data <- unlist(sapply(common_partners, function(partner) {
-      filter(gene1_data, (Barcode_x == partner |
-                            Barcode_y == partner))[,gi_name]
-    }))
-    gene2_data <- unlist(sapply(common_partners, function(partner) {
-      filter(gene2_data, (Barcode_x == partner |
-                            Barcode_y == partner))[,gi_name]
+    all_gene1_data <- c()
+    all_gene2_data <- c()
+    
+    for(gi_name in gi_names){
+    new_gene1_data <- unlist(sapply(common_partners, function(partner) {
+      filter(gene1_data, (Gene_x == partner |
+                            Gene_y == partner))[,gi_name]
     }))
     
-    return(cor(gene1_data, gene2_data))
+    all_gene1_data <- c(all_gene1_data, new_gene1_data)
+    new_gene2_data <- unlist(sapply(common_partners, function(partner) {
+      filter(gene2_data, (Gene_x == partner |
+                            Gene_y == partner))[,gi_name]
+    }))
+    all_gene2_data <- c(all_gene2_data, new_gene2_data)
+    }
+    
+    return(cor(all_gene1_data, all_gene2_data))
   })
 }
 
@@ -81,7 +89,7 @@ calculate_congruence <- function(cl,merged_data,gi_name){
 #  calculate_congruence(cl,merged_data,gi_name)
 #})
 
-gi_names <- sapply(conditions,function(condition){paste(c('GIS_xy.',condition),collapse='')})
+gi_names <- sapply(conditions,function(condition){paste(c('Z_GIS_xy.',condition),collapse='')})
 clusterExport(cl,'gi_names')
 clusterExport(cl,'merged_data')
 #clusterExport(cl,'calculate_congruence')
@@ -106,11 +114,11 @@ all_data <-
 colnames(all_data)[1] <- 'func'
 
 stop()  
-
 mms_data <- all_data[,c('func',grep('MMS',colnames(all_data),val=T))]
 mms_data_st_onge <- merged_data[,c('Sig_GO_link','z.Sxy.Sx.','z.Sxy.Sy.','Epsilon','Congruence')]
 mms_data_st_onge[,2:ncol(mms_data_st_onge)] <- apply(mms_data_st_onge[,2:ncol(mms_data_st_onge)],2,scale)
 colnames(mms_data_st_onge)[1] <- 'func'
+
 
 
 pred <- glm(func ~., data = mms_data, family=binomial(link='logit'))

@@ -67,9 +67,11 @@ precision_vs_stonge <- function(gi_data,
       gi_data_filtered[, st_onge_class] == 'AGGRAVATING'
     
     scores_cond <-
-      sign(gi_data_filtered[, z_column]) * -log10(as.numeric(gi_data_filtered[, fdr_column])) *
-      as.numeric(gi_data_filtered[, gi_column] > gi_cutoff_pos |
-                   gi_data_filtered[, gi_column] < gi_cutoff_neg)
+      gi_data_filtered[, gi_column] * as.numeric(gi_data_filtered[, fdr_column] < fdr_cutoff)
+      #gi_data_filtered[, z_column]
+      #sign(gi_data_filtered[, z_column]) * -log10(as.numeric(gi_data_filtered[, fdr_column]))# *
+      #as.numeric(gi_data_filtered[, gi_column] > gi_cutoff_pos |
+      #             gi_data_filtered[, gi_column] < gi_cutoff_neg)
     
     
     pos_perf <-
@@ -144,12 +146,13 @@ precision_vs_stonge <- function(gi_data,
     scores_cond <-
       c(
         scores_cond,
-        sign(gi_data_filtered[, z_column]) * -log10(as.numeric(gi_data_filtered[, fdr_column])) *
-          as.numeric(
-            gi_data_filtered[, gi_column] > gi_cutoff_pos |
-              gi_data_filtered[, gi_column] < gi_cutoff_neg
-          )
-      )
+        gi_data_filtered[, gi_column] * as.numeric(gi_data_filtered[, fdr_column] < fdr_cutoff))
+        #sign(gi_data_filtered[, z_column]) * -log10(as.numeric(gi_data_filtered[, fdr_column]))# *
+          #as.numeric(
+           # gi_data_filtered[, gi_column] > gi_cutoff_pos |
+          #    gi_data_filtered[, gi_column] < gi_cutoff_neg
+          #)
+      #)
   }
   
   
@@ -236,31 +239,65 @@ st_onge_auc_plot <- function(gi_data,
                              neg_col = rgb(230 / 255, 155 / 255, 34 / 255),
                              pos_col = rgb(90 / 255, 179 / 255, 228 / 255),
                              lwd = 3) {
-  for (condition in c(control_name, condition_name)) {
+  conditions <- c(control_name, condition_name)
+  
+  for (condition in c(conditions,'both')) {
+    if(condition != 'both'){
+      condname <- condition
+    }
+    else{
+      condname <- ''
+    }
+    
     gi_data_filtered <-
       dplyr::filter(gi_data,
                     SOJ_Class_NoMMS %in% c('NEUTRAL', 'AGGRAVATING', 'ALLEVIATING'))
     
-    if (condition == control_name) {
-      st_onge_class <- 'SOJ_Class_NoMMS'
-    }
-    if (condition == condition_name) {
-      st_onge_class <- 'SOJ_Class_MMS'
-    }
-    
-    fdr_column <- paste(c(fdr_prefix, condition), collapse = '.')
-    z_column <- paste(c(z_prefix, condition), collapse = '.')
-    gi_column <- paste(c(gi_prefix, condition), collapse = '.')
-    
-    labels_pos <-
-      gi_data_filtered[, st_onge_class] == 'ALLEVIATING'
-    labels_neg <-
-      gi_data_filtered[, st_onge_class] == 'AGGRAVATING'
-    
-    if (old_data == F) {
-      scores_cond <- gi_data_filtered[, z_column]
-    } else if (old_data == T) {
-      scores_cond <- gi_data_filtered[, gi_column]
+    if(condition != 'both'){
+      if (condition == control_name) {
+        st_onge_class <- 'SOJ_Class_NoMMS'
+      }
+      if (condition == condition_name) {
+        st_onge_class <- 'SOJ_Class_MMS'
+      }
+      
+      
+      fdr_column <- paste(c(fdr_prefix, condition), collapse = '.')
+      z_column <- paste(c(z_prefix, condition), collapse = '.')
+      gi_column <- paste(c(gi_prefix, condition), collapse = '.')
+      
+      labels_pos <-
+        gi_data_filtered[, st_onge_class] == 'ALLEVIATING'
+      labels_neg <-
+        gi_data_filtered[, st_onge_class] == 'AGGRAVATING'
+      
+      if (old_data == F) {
+        scores_cond <- gi_data_filtered[, z_column]
+      } else if (old_data == T) {
+        scores_cond <- gi_data_filtered[, gi_column]
+      }
+    }else{
+      labels_pos <- c()
+      labels_neg <- c()
+      for(st_onge_class in c('SOJ_Class_NoMMS','SOJ_Class_MMS')){
+        labels_pos <-
+          c(labels_pos, gi_data_filtered[, st_onge_class] == 'ALLEVIATING')
+        labels_neg <-
+          c(labels_neg,gi_data_filtered[, st_onge_class] == 'AGGRAVATING')
+      }
+      
+      scores_cond <- c()
+      if (old_data == F) {
+        for(condition in conditions){
+          z_column <- paste(c(z_prefix, condition), collapse = '.')
+          scores_cond <- c(scores_cond,gi_data_filtered[, z_column])
+        }
+      } else if (old_data == T) {
+        for(condition in conditions){
+          gi_column <- paste(c(gi_prefix, condition), collapse = '.')
+          scores_cond <- c(scores_cond,gi_data_filtered[, gi_column])
+        }
+      }
     }
     
     perf_pos <-
@@ -274,7 +311,7 @@ st_onge_auc_plot <- function(gi_data,
       perf_pos@y.values[[1]] * 100,
       lwd = lwd,
       col = pos_col,
-      main = condition,
+      main = condname,
       xlab = 'False Positive Rate (%)',
       ylab = 'Sensitivity (%)',
       type = 'l'
@@ -303,6 +340,9 @@ st_onge_auc_plot <- function(gi_data,
     text(70, 10, sprintf('AUC pos = %s', format(auc_pos, digits = 2)), col =
            pos_col)
   }
+  
+  
+  
 }
 
 
