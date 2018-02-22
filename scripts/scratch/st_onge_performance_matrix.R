@@ -1,11 +1,11 @@
 make_performance_matrix <- function(gi_data,
                                     control_name = "NoDrug",
                                     condition_name = "MMS",
-                                    x_axis_grep = "FDR.Internal_ij",
-                                    y_axis_grep = "^GIS_ij",
+                                    x_axis_grep = "FDR.neutral_xy",
+                                    y_axis_grep = "^GIS_xy",
                                     metr = 'mat',
                                     x_cutoff_vec = c(0:50)/5,
-                                    y_cutoff_vec = c(0:20)/200,
+                                    y_cutoff_vec = c(0:20)/100,
                                     st_onge_class_to_analyze = 'both')
                                     {
   negative_result_matrix <- matrix(nrow=length(x_cutoff_vec),ncol=length(y_cutoff_vec))
@@ -119,14 +119,14 @@ performance_heatmap <- function(mat,
       rgb(0.25, 0.45, 0.8),
       rgb(0.25, 0.75, 1)
     )
-    color_func <- grDevices::colorRampPalette(my_color_list)
-    
+    #color_func <- grDevices::terrain.colors#grDevices::colorRampPalette(my_color_list)
+    color_func <- grDevices::colorRampPalette(c("#000004FF","#51127CFF","#B63679FF","#FB8861FF","#FCFDBFFF"))
   }
   if(is.null(min_val)){
-    min_val <- min(mat)  
+    min_val <- 0.7#min(mat)  
   }
   if(is.null(max_val)){
-    max_val <- max(mat)
+    max_val <- 0.3#max(mat)
   }
   x_vals <- as.numeric(rownames(mat))
   y_vals <- as.numeric(colnames(mat))
@@ -141,6 +141,7 @@ performance_heatmap <- function(mat,
   par(bty = 'n') 
   
   if(add_legend){
+    par(xpd = T)
     layout(matrix(c(1,1,2,3), 2, 2, byrow = F),
            widths=c(3,1), heights=c(2,1))
   }
@@ -200,14 +201,13 @@ performance_heatmap <- function(mat,
   }
   
   if(add_legend){
-    par(xpd = T)
     plot(NULL,xlim=c(0,1),ylim=c(0,1),main='',axes=F,xlab='',ylab='')
     
-    seqs <- seq(min_val,max_val,length.out=100)
+    seqs <- seq(min_val,max_val,length.out=500)
     
     for(i in 1:length(seqs)){
       fill_col <- map_color(seqs[i],color_func,min_val,max_val)
-      lines(c(-0.5,0),c(i/length(seqs),i/length(seqs)),col=fill_col,lwd=5)
+      lines(c(-0.5,0),c(i/length(seqs),i/length(seqs)),col=fill_col,lwd=1)
       
     }
     
@@ -219,33 +219,33 @@ performance_heatmap <- function(mat,
   return(max_list)
 }
 
-performance_data <- gi_data
-performance_data[, grep('^FDR', colnames(performance_data))] <-
-  -log10(performance_data[, grep('^FDR', colnames(performance_data))]) *
-  sign(performance_data[, grep('^GI', colnames(performance_data))])
-
-performance_vs_st_onge <- make_performance_matrix(performance_data)
-optim_pos <- performance_heatmap(
-  performance_vs_st_onge$positive_interactions,
-  xlab = '-Log10(FDR) Threshold',
-  ylab = '|GIS| Threshold',
-  min_val = 0.5,
-  max_val = 0.7,
-  highlight_max_vals = T,
-  add_legend = T,
-  legend_title = 'MCC',
-  main = 'Performance vs St. Onge (positive GIs)'
-)[1, , drop = F]
-
-optim_neg <- performance_heatmap(
-  performance_vs_st_onge$negative_interactions,
-  xlab = '-Log10(FDR) Threshold',
-  ylab = '|GIS| Threshold',
-  min_val = 0.5,
-  max_val = 0.7,
-  highlight_max_vals = T,
-  add_legend = T,
-  legend_title = 'MCC',
-  main = 'Performance vs St. Onge (negative GIs)'
-)[1, , drop = F]
-
+# performance_data <- gi_data
+# performance_data[, grep('^FDR', colnames(performance_data))] <-
+#   -log10(performance_data[, grep('^FDR', colnames(performance_data))]) *
+#   sign(performance_data[, grep('^GI', colnames(performance_data))])
+# 
+# performance_vs_st_onge <- make_performance_matrix(performance_data)
+# optim_pos <- performance_heatmap(
+#   performance_vs_st_onge$positive_interactions,
+#   xlab = '-Log10(FDR) Threshold',
+#   ylab = '|GIS| Threshold',
+#   min_val = 0.5,
+#   max_val = 0.7,
+#   highlight_max_vals = T,
+#   add_legend = T,
+#   legend_title = 'MCC',
+#   main = 'Performance vs St. Onge (positive GIs)'
+# )[1, , drop = F]
+# 
+# optim_neg <- performance_heatmap(
+#   performance_vs_st_onge$negative_interactions,
+#   xlab = '-Log10(FDR) Threshold',
+#   ylab = '|GIS| Threshold',
+#   min_val = 0.5,
+#   max_val = 0.7,
+#   highlight_max_vals = T,
+#   add_legend = T,
+#   legend_title = 'MCC',
+#   main = 'Performance vs St. Onge (negative GIs)'
+# )[1, , drop = F]
+# 

@@ -1,11 +1,21 @@
+#' Make a histogram of GIS vs physical distance
+#'
+#' @param gi_data input genetic interaction table
+#' @param col_same_same histogram colour for same-same pairs
+#' @param col_linked histogram colour for linked pairs
+#' @param col_unlinked histogram colour for unlinked pairs
+#' @param linkage_cutoff cutoff (bp) for considering two genes on the same chromsome as linked
+#'
+#' @return NULL, makes a plot
 gis_vs_linkage_hist <- function(gi_data,
                                 col_same_same = rgb(91 / 255, 179 / 255, 228 / 255, 0.7),
                                 col_linked = rgb(230 / 255, 154 / 255, 36 / 255, 0.7),
-                                col_unlinked = rgb(0, 153 / 255, 128 / 255, 0.7)){
+                                col_unlinked = rgb(0, 153 / 255, 128 / 255, 0.7),
+                                linkage_cutoff = 75000){
   gi_columns <- grep('^GIS',colnames(gi_data),val=T)
   
   same_same_data <- unlist(dplyr::filter(gi_data,Chromosomal_distance_bp == 0)[,gi_columns])
-  linked_data <- unlist(dplyr::filter(gi_data,Chromosomal_distance_bp > 0, Chromosomal_distance_bp < 75000)[,gi_columns])
+  linked_data <- unlist(dplyr::filter(gi_data,Chromosomal_distance_bp > 0, Chromosomal_distance_bp < linkage_cutoff)[,gi_columns])
   unlinked_data <- unlist(dplyr::filter(gi_data,is.na(Chromosomal_distance_bp))[,gi_columns])
   
   #Set up histograms ahead of time to calculate proper breaks

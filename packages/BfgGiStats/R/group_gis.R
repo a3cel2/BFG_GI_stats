@@ -189,7 +189,7 @@ average_gi_data_by_gene <-
         
         
         
-        #Can probably better loop this somehow
+        #Can probably loop this somehow
         new_w_x <- sapply(1:length(w_x_columns), function(i) {
           var_weights <- 1 / (testset[, err_columns[i]] ^ 2)
           return(weighted.mean(x = testset[, w_x_columns[i]], w = var_weights))
@@ -261,79 +261,80 @@ average_gi_data_by_gene <-
     return(gi_data_grp)
   }
 
-
-find_discordant_pairs <-
-  function(gi_data,
-           type_column_grep = 'Type_of_gene',
-           gi_column_grep = '^GIS',
-           gi_err_column_grep = '^SE_GIS',
-           fdr_column_grep = '^P.neutral',
-           z_column_grep = '^Z_GIS',
-           w_x_column_grep = '^W_x\\.',
-           w_x_err_column_grep = '^W_x_SE\\.',
-           w_y_column_grep = '^W_y\\.',
-           w_y_err_column_grep = '^W_y_SE\\.',
-           w_xy_column_grep = '^W_xy\\.',
-           w_xy_err_column_grep = '^W_xy_SE\\.',
-           count_column_grep = '^C_xy') {
-    Gene1 <-
-      sapply(gi_data$Gene_x, function(name) {
-        paste(strsplit(name, split = '_')[[1]][1],collapse='_')
-      })
-    
-    Gene2 <-
-      sapply(gi_data$Gene_y, function(name) {
-        paste(strsplit(name, split = '_')[[1]][1],collapse='_')
-      })
-    
-    gene_columns <- cbind(Gene1, Gene2)
-    
-    #Alphabetically re-order genes for easier queries
-    alpha_order <-
-      t(apply(gene_columns, 1, function(x) {
-        sort(x, index.return = T)$ix
-      }))
-    
-    gene_columns <- t(sapply(1:nrow(gi_data), function(i) {
-      gene_columns[i, alpha_order[i,]]
-    }))
-    
-    type_columns <- grep(type_column_grep, colnames(gi_data))
-    
-    gi_data[, type_columns] <-
-      as.data.frame(t(sapply(1:nrow(gi_data), function(i) {
-        dat <- gi_data[i, type_columns]
-        return(dat[alpha_order[i,]])
-      })))
-    
-    gi_data[, type_columns[1]] <- unlist(gi_data[, type_columns[1]])
-    gi_data[, type_columns[2]] <- unlist(gi_data[, type_columns[2]])
-    
-    Gene1 <- gene_columns[, 1]
-    Gene2 <- gene_columns[, 2]
-    
-    preserved_colnames <- colnames(gi_data)
-    preserved_colnames <-
-      preserved_colnames[grep('Barcode', preserved_colnames, invert = T)]
-    preserved_colnames <- c('Gene1', 'Gene2', preserved_colnames)
-    
-    gi_data_grp <- cbind(gi_data, cbind(Gene1, Gene2))
-    
-    split_gi_data_grp <- split(gi_data_grp,
-                               list(Gene1,
-                                    Gene2))
-    
-    pee_vals <- sapply(split_gi_data_grp,function(grp){
-      if(nrow(grp) == 2){
-        print(grp)
-        g1 <- as.numeric(grp[1,grep(gi_column_grep,colnames(grp))])
-        g2 <- as.numeric(grp[2,grep(gi_column_grep,colnames(grp))])
-        
-        return(abs(g1 - g2))
-        #return(t.test(g1,g2,paired=T)$p.val)
-        #t.test(grp[1,grep(gi_column_grep,colnames(grp))],grp[2,grep(gi_column_grep,colnames(grp))],paired=T)$p.val
-      }
-    })
-    
-    return(pee_vals)
-  }
+# Not used
+# 
+# find_discordant_pairs <-
+#   function(gi_data,
+#            type_column_grep = 'Type_of_gene',
+#            gi_column_grep = '^GIS',
+#            gi_err_column_grep = '^SE_GIS',
+#            fdr_column_grep = '^P.neutral',
+#            z_column_grep = '^Z_GIS',
+#            w_x_column_grep = '^W_x\\.',
+#            w_x_err_column_grep = '^W_x_SE\\.',
+#            w_y_column_grep = '^W_y\\.',
+#            w_y_err_column_grep = '^W_y_SE\\.',
+#            w_xy_column_grep = '^W_xy\\.',
+#            w_xy_err_column_grep = '^W_xy_SE\\.',
+#            count_column_grep = '^C_xy') {
+#     Gene1 <-
+#       sapply(gi_data$Gene_x, function(name) {
+#         paste(strsplit(name, split = '_')[[1]][1],collapse='_')
+#       })
+#     
+#     Gene2 <-
+#       sapply(gi_data$Gene_y, function(name) {
+#         paste(strsplit(name, split = '_')[[1]][1],collapse='_')
+#       })
+#     
+#     gene_columns <- cbind(Gene1, Gene2)
+#     
+#     #Alphabetically re-order genes for easier queries
+#     alpha_order <-
+#       t(apply(gene_columns, 1, function(x) {
+#         sort(x, index.return = T)$ix
+#       }))
+#     
+#     gene_columns <- t(sapply(1:nrow(gi_data), function(i) {
+#       gene_columns[i, alpha_order[i,]]
+#     }))
+#     
+#     type_columns <- grep(type_column_grep, colnames(gi_data))
+#     
+#     gi_data[, type_columns] <-
+#       as.data.frame(t(sapply(1:nrow(gi_data), function(i) {
+#         dat <- gi_data[i, type_columns]
+#         return(dat[alpha_order[i,]])
+#       })))
+#     
+#     gi_data[, type_columns[1]] <- unlist(gi_data[, type_columns[1]])
+#     gi_data[, type_columns[2]] <- unlist(gi_data[, type_columns[2]])
+#     
+#     Gene1 <- gene_columns[, 1]
+#     Gene2 <- gene_columns[, 2]
+#     
+#     preserved_colnames <- colnames(gi_data)
+#     preserved_colnames <-
+#       preserved_colnames[grep('Barcode', preserved_colnames, invert = T)]
+#     preserved_colnames <- c('Gene1', 'Gene2', preserved_colnames)
+#     
+#     gi_data_grp <- cbind(gi_data, cbind(Gene1, Gene2))
+#     
+#     split_gi_data_grp <- split(gi_data_grp,
+#                                list(Gene1,
+#                                     Gene2))
+#     
+#     pee_vals <- sapply(split_gi_data_grp,function(grp){
+#       if(nrow(grp) == 2){
+#         print(grp)
+#         g1 <- as.numeric(grp[1,grep(gi_column_grep,colnames(grp))])
+#         g2 <- as.numeric(grp[2,grep(gi_column_grep,colnames(grp))])
+#         
+#         return(abs(g1 - g2))
+#         #return(t.test(g1,g2,paired=T)$p.val)
+#         #t.test(grp[1,grep(gi_column_grep,colnames(grp))],grp[2,grep(gi_column_grep,colnames(grp))],paired=T)$p.val
+#       }
+#     })
+#     
+#     return(pee_vals)
+#   }

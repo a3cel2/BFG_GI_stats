@@ -7,6 +7,9 @@ devtools::use_package('ExtDist')
 #' @param nn_pair_type "null distribution" of GI scores used to
 #' compute p-values. Either 'broad' for all interactions with neutral
 #' pairs or 'narrow' for only neutral-neutral pairs
+#' @param z_grep_pattern grep pattern to find Z_GIS columns
+#' @param gi_grep_pattern grep pattern to find GIS columns
+#' @param make_plots boolean, whether to make a histogram of p-value distribution
 #'
 #' @return gi_data with p values added
 add_p_values <- function(gi_data,
@@ -185,13 +188,15 @@ add_p_values <- function(gi_data,
 #'
 #' @param gi_data input genetic interaction table
 #' @param z_score_cols which columns correspond to Z scores - default is to use grep to find automatically
-#' @param z_class_cols which columns correspond to Z-based classifications - default is to use grep to find automatically
 #' @param fdr_cols which columns correspond to internal FDRs - default is to use grep to find automatically
-#' @param fdr_cutoff internal FDR cutoff to make GI calls - defaults to 0.05
-#' @param use_z use Z scores instead of FDR to make GI calls? defaults to False
-#' @param z_cutoff_neg if use_z is True, Z-cutoff for negative interactions
-#' @param z_cutoff_pos  if use_z is True, Z-cutoff for positive interactions
-#'
+#' @param gi_cols which columns correspond to GI scores - default is to use grep to find automatically
+#' @param z_cutoff_neg Z_GIS  cutoff for negative interactions
+#' @param z_cutoff_pos  Z_GIS cutoff for positive interactions
+#' @param fdr_cutoff_pos FDR cutoff for positive interactions
+#' @param fdr_cutoff_neg FDR cutoff for negative interactions
+#' @param gi_cutoff_pos GIS cutoff for positive interactions
+#' @param gi_cutoff_neg GIS cutoff for negative interactions
+#
 #' @return a version of gi_data with GI calls updated
 update_calls <- function(gi_data,
                          z_score_cols = NULL,

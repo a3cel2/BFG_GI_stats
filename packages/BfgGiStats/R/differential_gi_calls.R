@@ -7,6 +7,7 @@
 #' compute FDR.  Either 'broad' for all interactions with neutral
 #' pairs or 'narrow' for only neutral-neutral pairs
 #' @param make_plots make histogram of Z scores while executing?
+#' @param delta_gi_cutoff effect size cutoff (delta GIS) on top of fdr_cutoff
 #'
 #' @return a data frame with differential genetic interaction comparisons, conditions pairs sorted in alphabetical order
 differential_gi_analysis <- function(gi_data,
@@ -234,18 +235,28 @@ differential_gi_analysis <- function(gi_data,
 }
 
 
+#' Histogram of differential interaction effect sizes for neutral and DDR pairs
+#'
+#' @param differential_calls differential interaction dataframe
+#' @param max_val values above this are grouped in the >= max_val bin
+#' @param min_val values below this are grouped in the <= min_val bin
+#' @param nbreaks number of breaks in the histogram
+#'
+#' @return NULL, makes a plot
 delta_z_histogram <- function(differential_calls,
                               max_val = 5,
                               min_val = -5,
                               nbreaks = 300) {
   diff_calls_neutral <-
     filter(differential_calls,
-           Type_of_gene_x == 'Neutral',
-           Type_of_gene_y == 'Neutral')
+           Type_of_gene_x == 'Neutral' | Type_of_gene_y == 'Neutral')
+  
   diff_calls_ddr <-
     filter(differential_calls,
-           Type_of_gene_x == 'DNA_repair',
-           Type_of_gene_y == 'DNA_repair')
+           Type_of_gene_x == 'DNA_repair' & Type_of_gene_y == 'DNA_repair')
+  
+  
+  
   h1 <- hist(diff_calls_ddr$DeltaZ, breaks = nbreaks, plot = F)
   h2 <-
     hist(diff_calls_neutral$DeltaZ,

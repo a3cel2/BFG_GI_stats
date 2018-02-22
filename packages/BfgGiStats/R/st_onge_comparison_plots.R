@@ -14,206 +14,212 @@ trapezoid_integration <- function(x, y) {
   return(area_sum)
 }
 
-#' Plots St. Onge et al validation as a function of the internal FDR estimates
-#'
-#' @param gi_data input genetic interaction table
-#' @param control_name condition which corresponds to 'NoDrug' in the St onge data
-#' @param condition_name condition which corresponds to 'MMS' in the St onge data
-#' @param fdr_prefix pasted with control_name and condition_name to find the FDR columns
-#' @param z_prefix pasted with control_name and condition_name to find the Z columns
-#' @param fdr_cutoff used to draw 'cutoff' lines in the plot
-#' @param xlims plot x axis limits
-#' @param xlab plot x axis label
-precision_vs_stonge <- function(gi_data,
-                                control_name = "NoDrug",
-                                condition_name = "MMS",
-                                fdr_prefix = "FDR.neutral_xy",
-                                z_prefix = "Z_GIS_xy",
-                                gi_prefix = "GIS_xy",
-                                fdr_cutoff = 0.05,
-                                metr = 'prec',
-                                xlims = c(-5, 5),
-                                xlab = expression('-Log'[10] * '(FDR'['neutral'] *
-                                                    ')'),
-                                ylab = 'St.Onge Validation Rate (%)',
-                                draw_cutoffs = T,
-                                gi_cutoff_pos = 0.05,
-                                gi_cutoff_neg = -0.07,
-                                cutoffs_drawn = NULL) {
-  #Individual performance
-  for (condition in c(control_name, condition_name)) {
-    if (condition == control_name) {
-      st_onge_class <- 'SOJ_Class_NoMMS'
-    }
-    if (condition == condition_name) {
-      st_onge_class <- 'SOJ_Class_MMS'
-    }
-    
-    gi_data_filtered <-
-      dplyr::filter(gi_data,
-                    SOJ_Class_NoMMS %in% c('NEUTRAL', 'AGGRAVATING', 'ALLEVIATING'))
-    
-    gi_data_filtered <-
-      dplyr::filter(gi_data_filtered,
-                    Remove_by_Chromosomal_distance_or_SameGene == 'no')
-    
-    
-    
-    fdr_column <- paste(c(fdr_prefix, condition), collapse = '.')
-    z_column <- paste(c(z_prefix, condition), collapse = '.')
-    gi_column <- paste(c(gi_prefix, condition), collapse = '.')
-    
-    labels_pos <-
-      gi_data_filtered[, st_onge_class] == 'ALLEVIATING'
-    labels_neg <-
-      gi_data_filtered[, st_onge_class] == 'AGGRAVATING'
-    
-    scores_cond <-
-      gi_data_filtered[, gi_column] * as.numeric(gi_data_filtered[, fdr_column] < fdr_cutoff)
-    #gi_data_filtered[, z_column]
-    #as.numeric(gi_data_filtered[, gi_column] > gi_cutoff_pos |
-    #             gi_data_filtered[, gi_column] < gi_cutoff_neg)
-    
-    
-    pos_perf <-
-      ROCR::performance(ROCR::prediction(scores_cond, labels_pos), metr)
-    neg_perf <-
-      ROCR::performance(ROCR::prediction(-scores_cond, labels_neg), metr)
-    
-    pos_cutoff <- pos_perf@x.values[[1]]
-    pos_precision <- pos_perf@y.values[[1]]
-    
-    neg_cutoff <- neg_perf@x.values[[1]]
-    neg_precision <- neg_perf@y.values[[1]]
-    
-    if (condition == control_name) {
-      if (is.null(xlims)) {
-        xlims <-
-          c(-1 * neg_perf@x.values[[1]][2], pos_perf@x.values[[1]][2])
-      }
-      par(mar = c(4.5, 5, 3, 1))
-      par(las = 1)
-      plot(
-        pos_cutoff[pos_cutoff > 0],
-        (pos_precision * 100)[pos_cutoff > 0],
-        type = 'l',
-        ylab = ylab,
-        xlab = xlab,
-        main = '',
-        #GI Precision vs St. Onge',
-        lwd = 1,
-        xlim = xlims,
-        ylim = c(0, 100),
-        col = 'blue'
-      )
-      lines(-neg_cutoff[neg_cutoff > 0],
-            (neg_precision * 100)[neg_cutoff > 0],
-            lwd = 1,
-            col = 'blue')
-    } else{
-      lines(pos_cutoff[pos_cutoff > 0],
-            (pos_precision * 100)[pos_cutoff > 0],
-            lwd = 1,
-            col = 'red')
-      lines(-neg_cutoff[neg_cutoff > 0],
-            (neg_precision * 100)[neg_cutoff > 0],
-            lwd = 1,
-            col = 'red')
-    }
-  }
-  
-  #Joint performance
-  labels_pos <- c()
-  labels_neg <- c()
-  scores_cond <- c()
-  
-  for (condition in c(control_name, condition_name)) {
-    if (condition == control_name) {
-      st_onge_class <- 'SOJ_Class_NoMMS'
-    }
-    if (condition == condition_name) {
-      st_onge_class <- 'SOJ_Class_MMS'
-    }
-    
-    fdr_column <- paste(c(fdr_prefix, condition), collapse = '.')
-    z_column <- paste(c(z_prefix, condition), collapse = '.')
-    gi_column <- paste(c(gi_prefix, condition), collapse = '.')
-    
-    labels_pos <-
-      c(labels_pos, gi_data_filtered[, st_onge_class] == 'ALLEVIATING')
-    labels_neg <-
-      c(labels_neg, gi_data_filtered[, st_onge_class] == 'AGGRAVATING')
-    
-    scores_cond <-
-      c(scores_cond,
-        gi_data_filtered[, gi_column] * as.numeric(gi_data_filtered[, fdr_column] < fdr_cutoff))
-    #sign(gi_data_filtered[, z_column]) * -log10(as.numeric(gi_data_filtered[, fdr_column]))# *
-    #as.numeric(
-    # gi_data_filtered[, gi_column] > gi_cutoff_pos |
-    #    gi_data_filtered[, gi_column] < gi_cutoff_neg
-    #)
-    #)
-  }
-  
-  
-  
-  pos_perf <-
-    ROCR::performance(ROCR::prediction(scores_cond, labels_pos), metr)
-  neg_perf <-
-    ROCR::performance(ROCR::prediction(-scores_cond, labels_neg), metr)
-  
-  pos_cutoff <- pos_perf@x.values[[1]]
-  pos_precision <- pos_perf@y.values[[1]]
-  
-  neg_cutoff <- neg_perf@x.values[[1]]
-  neg_precision <- neg_perf@y.values[[1]]
-  
-  lines(pos_cutoff[pos_cutoff > 0],
-        (pos_precision * 100)[pos_cutoff > 0],
-        lwd = 1,
-        col = 'black')
-  lines(-neg_cutoff[neg_cutoff > 0],
-        (neg_precision * 100)[neg_cutoff > 0],
-        lwd = 1,
-        col = 'black')
-  
-  best_neg <- neg_cutoff[which.max(neg_precision)]
-  best_pos <- pos_cutoff[which.max(pos_precision)]
-  
-  #print(best_neg)
-  #labels_pos <-
-  #  gi_data_filtered[, 'SOJ_Class_NoMMS'] == 'ALLEVIATING'
-  #labels_neg <-
-  #  gi_data_filtered[, 'SOJ_Class_NoMMS'] == 'AGGRAVATING'
-  #
-  #  labels_pos <- c(labels_pos,gi_data_filtered[, 'SOJ_Class_MMS'] == 'ALLEVIATING')
-  #  labels_neg <- c(labels_neg,gi_data_filtered[, 'SOJ_Class_MMS'] == 'AGGRAVATING')
-  
-  
-  if (draw_cutoffs == T) {
-    if (is.null(cutoffs_drawn)) {
-      abline(v = -best_neg,
-             lty = 3,
-             lwd = 0.7)
-      abline(v = best_pos, lty = 3, lwd = 0.7)
-    } else{
-      abline(v = -cutoffs_drawn[1],
-             lty = 3,
-             lwd = 0.7)
-      abline(v = cutoffs_drawn[2],
-             lty = 3,
-             lwd = 0.7)
-    }
-  }
-  legend(
-    xlims[1],
-    35,
-    legend = c(control_name, condition_name, 'Combined'),
-    fill = c('blue', 'red', 'black')
-  )
-  
-  return(c(best_neg, best_pos))
-}
+
+
+##Legacy function
+#' #' Plots St. Onge et al validation as a function of the internal FDR estimates
+#' #'
+#' #' @param gi_data input genetic interaction table
+#' #' @param control_name condition which corresponds to 'NoDrug' in the St onge data
+#' #' @param condition_name condition which corresponds to 'MMS' in the St onge data
+#' #' @param fdr_prefix pasted with control_name and condition_name to find the FDR columns
+#' #' @param z_prefix pasted with control_name and condition_name to find the Z columns
+#' #' @param fdr_cutoff strains above this FDR are filtered out when drawing the plot
+#' #' @param xlims plot x axis limits
+#' #' @param gi_prefix pasted with control_name and condition_name to find the GIS columns
+#' #' @param metr performance metric string, must be a valid ROCR metric
+#' #' @param ylab plot y axis limits
+#' #' @param draw_cutoffs boolean, whether to draw lines at cutoffs 
+#' #' @param gi_cutoff_pos 
+#' #' @param gi_cutoff_neg 
+#' #' @param cutoffs_drawn 
+#' #' @param xlab plot x axis label
+#' precision_vs_stonge <- function(gi_data,
+#'                                 control_name = "NoDrug",
+#'                                 condition_name = "MMS",
+#'                                 fdr_prefix = "FDR.neutral_xy",
+#'                                 z_prefix = "Z_GIS_xy",
+#'                                 gi_prefix = "GIS_xy",
+#'                                 fdr_cutoff = 0.05,
+#'                                 metr = 'prec',
+#'                                 xlims = c(-5, 5),
+#'                                 xlab = expression('GIS'),
+#'                                 ylab = 'St.Onge Validation Rate (%)',
+#'                                 draw_cutoffs = T,
+#'                                 gi_cutoff_pos = 0.05,
+#'                                 gi_cutoff_neg = -0.07,
+#'                                 cutoffs_drawn = NULL) {
+#'   #Individual performance
+#'   for (condition in c(control_name, condition_name)) {
+#'     if (condition == control_name) {
+#'       st_onge_class <- 'SOJ_Class_NoMMS'
+#'     }
+#'     if (condition == condition_name) {
+#'       st_onge_class <- 'SOJ_Class_MMS'
+#'     }
+#'     
+#'     gi_data_filtered <-
+#'       dplyr::filter(gi_data,
+#'                     SOJ_Class_NoMMS %in% c('NEUTRAL', 'AGGRAVATING', 'ALLEVIATING'))
+#'     
+#'     gi_data_filtered <-
+#'       dplyr::filter(gi_data_filtered,
+#'                     Remove_by_Chromosomal_distance_or_SameGene == 'no')
+#'     
+#'     
+#'     
+#'     fdr_column <- paste(c(fdr_prefix, condition), collapse = '.')
+#'     z_column <- paste(c(z_prefix, condition), collapse = '.')
+#'     gi_column <- paste(c(gi_prefix, condition), collapse = '.')
+#'     
+#'     labels_pos <-
+#'       gi_data_filtered[, st_onge_class] == 'ALLEVIATING'
+#'     labels_neg <-
+#'       gi_data_filtered[, st_onge_class] == 'AGGRAVATING'
+#'     
+#'     scores_cond <-
+#'       gi_data_filtered[, gi_column] * as.numeric(gi_data_filtered[, fdr_column] < fdr_cutoff)
+#' 
+#'     
+#'     pos_perf <-
+#'       ROCR::performance(ROCR::prediction(scores_cond, labels_pos), metr)
+#'     neg_perf <-
+#'       ROCR::performance(ROCR::prediction(-scores_cond, labels_neg), metr)
+#'     
+#'     pos_cutoff <- pos_perf@x.values[[1]]
+#'     pos_precision <- pos_perf@y.values[[1]]
+#'     
+#'     neg_cutoff <- neg_perf@x.values[[1]]
+#'     neg_precision <- neg_perf@y.values[[1]]
+#'     
+#'     if (condition == control_name) {
+#'       if (is.null(xlims)) {
+#'         xlims <-
+#'           c(-1 * neg_perf@x.values[[1]][2], pos_perf@x.values[[1]][2])
+#'       }
+#'       par(mar = c(4.5, 5, 3, 1))
+#'       par(las = 1)
+#'       plot(
+#'         pos_cutoff[pos_cutoff > 0],
+#'         (pos_precision * 100)[pos_cutoff > 0],
+#'         type = 'l',
+#'         ylab = ylab,
+#'         xlab = xlab,
+#'         main = '',
+#'         #GI Precision vs St. Onge',
+#'         lwd = 1,
+#'         xlim = xlims,
+#'         ylim = c(0, 100),
+#'         col = 'blue'
+#'       )
+#'       lines(-neg_cutoff[neg_cutoff > 0],
+#'             (neg_precision * 100)[neg_cutoff > 0],
+#'             lwd = 1,
+#'             col = 'blue')
+#'     } else{
+#'       lines(pos_cutoff[pos_cutoff > 0],
+#'             (pos_precision * 100)[pos_cutoff > 0],
+#'             lwd = 1,
+#'             col = 'red')
+#'       lines(-neg_cutoff[neg_cutoff > 0],
+#'             (neg_precision * 100)[neg_cutoff > 0],
+#'             lwd = 1,
+#'             col = 'red')
+#'     }
+#'   }
+#'   
+#'   #Joint performance
+#'   labels_pos <- c()
+#'   labels_neg <- c()
+#'   scores_cond <- c()
+#'   
+#'   for (condition in c(control_name, condition_name)) {
+#'     if (condition == control_name) {
+#'       st_onge_class <- 'SOJ_Class_NoMMS'
+#'     }
+#'     if (condition == condition_name) {
+#'       st_onge_class <- 'SOJ_Class_MMS'
+#'     }
+#'     
+#'     fdr_column <- paste(c(fdr_prefix, condition), collapse = '.')
+#'     z_column <- paste(c(z_prefix, condition), collapse = '.')
+#'     gi_column <- paste(c(gi_prefix, condition), collapse = '.')
+#'     
+#'     labels_pos <-
+#'       c(labels_pos, gi_data_filtered[, st_onge_class] == 'ALLEVIATING')
+#'     labels_neg <-
+#'       c(labels_neg, gi_data_filtered[, st_onge_class] == 'AGGRAVATING')
+#'     
+#'     scores_cond <-
+#'       c(scores_cond,
+#'         gi_data_filtered[, gi_column] * as.numeric(gi_data_filtered[, fdr_column] < fdr_cutoff))
+#'     #sign(gi_data_filtered[, z_column]) * -log10(as.numeric(gi_data_filtered[, fdr_column]))# *
+#'     #as.numeric(
+#'     # gi_data_filtered[, gi_column] > gi_cutoff_pos |
+#'     #    gi_data_filtered[, gi_column] < gi_cutoff_neg
+#'     #)
+#'     #)
+#'   }
+#'   
+#'   
+#'   
+#'   pos_perf <-
+#'     ROCR::performance(ROCR::prediction(scores_cond, labels_pos), metr)
+#'   neg_perf <-
+#'     ROCR::performance(ROCR::prediction(-scores_cond, labels_neg), metr)
+#'   
+#'   pos_cutoff <- pos_perf@x.values[[1]]
+#'   pos_precision <- pos_perf@y.values[[1]]
+#'   
+#'   neg_cutoff <- neg_perf@x.values[[1]]
+#'   neg_precision <- neg_perf@y.values[[1]]
+#'   
+#'   lines(pos_cutoff[pos_cutoff > 0],
+#'         (pos_precision * 100)[pos_cutoff > 0],
+#'         lwd = 1,
+#'         col = 'black')
+#'   lines(-neg_cutoff[neg_cutoff > 0],
+#'         (neg_precision * 100)[neg_cutoff > 0],
+#'         lwd = 1,
+#'         col = 'black')
+#'   
+#'   best_neg <- neg_cutoff[which.max(neg_precision)]
+#'   best_pos <- pos_cutoff[which.max(pos_precision)]
+#'   
+#'   #print(best_neg)
+#'   #labels_pos <-
+#'   #  gi_data_filtered[, 'SOJ_Class_NoMMS'] == 'ALLEVIATING'
+#'   #labels_neg <-
+#'   #  gi_data_filtered[, 'SOJ_Class_NoMMS'] == 'AGGRAVATING'
+#'   #
+#'   #  labels_pos <- c(labels_pos,gi_data_filtered[, 'SOJ_Class_MMS'] == 'ALLEVIATING')
+#'   #  labels_neg <- c(labels_neg,gi_data_filtered[, 'SOJ_Class_MMS'] == 'AGGRAVATING')
+#'   
+#'   
+#'   if (draw_cutoffs == T) {
+#'     if (is.null(cutoffs_drawn)) {
+#'       abline(v = -best_neg,
+#'              lty = 3,
+#'              lwd = 0.7)
+#'       abline(v = best_pos, lty = 3, lwd = 0.7)
+#'     } else{
+#'       abline(v = cutoffs_drawn[1],
+#'              lty = 3,
+#'              lwd = 0.7)
+#'       abline(v = cutoffs_drawn[2],
+#'              lty = 3,
+#'              lwd = 0.7)
+#'     }
+#'   }
+#'   legend(
+#'     xlims[1],
+#'     35,
+#'     legend = c(control_name, condition_name, 'Combined'),
+#'     fill = c('blue', 'red', 'black')
+#'   )
+#'   
+#'   return(c(best_neg, best_pos))
+#' }
 
 
 
@@ -371,6 +377,7 @@ st_onge_auc_plot <- function(gi_data,
 #' @param gi_data input genetic interaction table
 #' @param control_name condition which corresponds to 'NoMMS' in the St onge data
 #' @param condition_name condition which corresponds to 'MMS' in the St onge data
+#' @param point_col point colour
 #' @param gi_prefix pasted with control_name and condition_name to find the raw GI columns
 st_onge_scatterplot <- function(gi_data,
                                 control_name = "NoDrug",
@@ -734,6 +741,54 @@ st_onge_scatterplot <- function(gi_data,
 # }
 
 
+
+##Legacy function
+#' #' Plots St. Onge et al validation as a function of the internal FDR estimates
+#' #'
+#' #' @param gi_data input genetic interaction table
+#' #' @param control_name condition which corresponds to 'NoDrug' in the St onge data
+#' #' @param condition_name condition which corresponds to 'MMS' in the St onge data
+#' #' @param fdr_prefix 
+#' #' @param z_prefix 
+#' #' @param fdr_cutoff 
+#' #' @param xlims plot x axis limits
+#' #' @param gi_prefix p
+#' #' @param metr performance metric string, must be a valid ROCR metric
+#' #' @param ylab plot y axis limits
+#' #' @param draw_cutoffs boolean, whether to draw lines at cutoffs 
+#' #' @param gi_cutoff_pos 
+#' #' @param gi_cutoff_neg 
+#' #' @param cutoffs_drawn 
+#' #' @param xlab plot x axis label
+
+
+#' Plot two ROCR metrics simultaneously as a function of GIS cutoff
+#' (defaults to precision and recall)
+#'
+#' @param gi_data input genetic interaction table
+#' @param control_name condition name in gi_data which corresponds to 'NoDrug' in the St onge data
+#' @param condition_name condition name in gi_data which corresponds to 'MMS' in the St onge data
+#' @param fdr_prefix pasted with control_name and condition_name to find the FDR columns
+#' @param z_prefix pasted with control_name and condition_name to find the Z columns
+#' @param gi_prefix pasted with control_name and condition_name to find the GIS columns
+#' @param fdr_cutoff strains above this FDR are filtered out when drawing the plot
+#' @param metr1 first metric to be plotted as function of GIS. Must be valid ROCR performance string. defaults to 'prec'
+#' @param metr2 second metric to be plotted as function of GIS. Must be valid ROCR performance string. defaults to 'rec'
+#' @param metr1_name plot name for first metric
+#' @param metr2_name plot name for second metric
+#' @param col1 line colour for drawing first metric performance
+#' @param col2 line colour for drawing second metric performance
+#' @param xlims x limits for plot
+#' @param ylims y limits for plot
+#' @param xlab x label for plot
+#' @param ylab1 left y label for plot
+#' @param ylab2 right y label for plot
+#' @param draw_cutoffs boolean, whether draw lines at GIS cutoffs in cutoffs_drawn
+#' @param cutoffs_drawn where to draw lines and summarize perforamnce
+#' @param legend_pos where to position the legend
+#'
+#' @return NULL, makes a plot
+#'
 prec_rec_vs_stonge <- function(gi_data,
                                control_name = "NoDrug",
                                condition_name = "MMS",
@@ -813,7 +868,6 @@ prec_rec_vs_stonge <- function(gi_data,
   
   
   
-  
   neg_cutoff <- (-1)*neg_metr1@x.values[[1]]
   neg_perf1 <- neg_metr1@y.values[[1]]*100
   neg_perf2 <- neg_metr2@y.values[[1]]*100
@@ -832,7 +886,6 @@ prec_rec_vs_stonge <- function(gi_data,
     perf1 <- par[[2]]
     perf2 <- par[[3]]
     
-    #par(las = 3)
     par(mar = c(5,4.5,2,4.5))
     par(xpd = F)
     plot(

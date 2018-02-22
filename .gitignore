@@ -2,3 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+scripts/scratch
+doc/
+data/scratch
+data/old
