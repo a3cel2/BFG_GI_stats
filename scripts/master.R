@@ -14,9 +14,17 @@
 ##################################################################
 
 
-require(Cairo)
+
 require(qvalue)
 require(dplyr)
+
+#Cairo must be installed for most accurate rendering of plots
+#pdf base function will work for 
+if('Cairo' %in% rownames(installed.packages())){
+  pdf_function <- Cairo::CairoPDF
+}else{
+  pdf_function <- pdf
+}
 
 
 #Needs to be called from /scripts directory for this to run
@@ -126,7 +134,7 @@ setwd(this.dir)
 neutral_gi_data <- filter(gi_data,Type_of_gene_x == 'Neutral' | Type_of_gene_y == 'Neutral')
 dir.create('../results', showWarnings = FALSE)
 setwd('../results')
-Cairo::CairoPDF(file = 'GIS_NoDrug_vs_distance.pdf',
+pdf_function(file = 'GIS_NoDrug_vs_distance.pdf',
                 width = 4.5,
                 height = 3.5)
 par(mar=c(4.5,5,1,2))
@@ -146,7 +154,7 @@ dev.off()
 #Make Fig 2 panel
 setwd(this.dir)
 setwd('../results')
-Cairo::CairoPDF(file = 'GIS_by_linkage.pdf',
+pdf_function(file = 'GIS_by_linkage.pdf',
                 width = 4.5,
                 height = 4)
 gis_vs_linkage_hist(gi_data)
@@ -157,7 +165,7 @@ dev.off()
 #Plot z distribution
 setwd(this.dir)
 setwd('../results')
-Cairo::CairoPDF(file = 'Z_distribution.pdf',
+pdf_function(file = 'Z_distribution.pdf',
                 width = 10,
                 height = 4)
 par(mfrow = c(2, 5))
@@ -176,12 +184,13 @@ gi_data <- gi_data[, -grep('CMPT', colnames(gi_data))]
 #Preserve at this step for differential gi_calls
 gi_data_old <- gi_data
 
-
-## Reviewer plot, have to temporarily allow non well-measured above for this plot to work
+###########################
+## Have to temporarily allow non well-measured above for this plot to work
+###########################
 # setwd(this.dir)
 # setwd('../results')
 # cut <- 30
-# Cairo::CairoPDF(file = 'gis_well_measured_vs_non.pdf',
+# pdf_function(file = 'gis_well_measured_vs_non.pdf',
 #                 width = 4.5,
 #                 height = 3.5)
 # par(mar=c(4,4.5,3,1))
@@ -233,7 +242,7 @@ gi_data_old <- gi_data
 
 
 #Score comparison scatterplot - by barcode
-Cairo::CairoPDF(file = 'st_onge_scatterplot_barcodewise.pdf',
+pdf_function(file = 'st_onge_scatterplot_barcodewise.pdf',
                 width = 7.5,
                 height = 3.5)
 par(mfrow = c(1, 2))
@@ -249,7 +258,7 @@ gi_data <- average_gi_data_by_gene(gi_data)
 
 
 #Make sure p-value distribution looks sane
-Cairo::CairoPDF(file = 'gene_averaged_p_value_histogram.pdf',
+pdf_function(file = 'gene_averaged_p_value_histogram.pdf',
                 width = 5.5,
                 height = 4.5)
 hist(as.matrix(gi_data[, grep('^P.neutral', colnames(gi_data))]),
@@ -278,7 +287,7 @@ colnames(gi_data)[grep('^P.neutral', colnames(gi_data))] <- fdr_colnames
 #Precision/recall at the 0.05,0.07 GIs cutoffs
 setwd(this.dir)
 setwd('../results')
-Cairo::CairoPDF(file = 'prec_rec_vs_st_onge.pdf',
+pdf_function(file = 'prec_rec_vs_st_onge.pdf',
                 width = 9.4,
                 height = 3.8)
 prec_rec_vs_stonge(gi_data, fdr_cutoff = 0.01,cutoffs_drawn = c(-0.075,0.075))
@@ -288,7 +297,7 @@ dev.off()
 setwd(this.dir)
 setwd('../results')
 
-Cairo::CairoPDF(file = 'auc_vs_st_onge_new.pdf',
+pdf_function(file = 'auc_vs_st_onge_new.pdf',
                 width = 12,
                 height = 4)
 par(mfrow = c(1, 3))
@@ -310,7 +319,7 @@ gi_data <- update_calls(
 
 #Make gene-wise scatterplot
 #Manuscript uses barcode-wise plot
-Cairo::CairoPDF(file = 'st_onge_scatterplot_genewise.pdf',
+pdf_function(file = 'st_onge_scatterplot_genewise.pdf',
                 width = 7.5,
                 height = 3.5)
 par(mfrow = c(1, 2))
@@ -344,7 +353,7 @@ write.table(
 
 setwd(this.dir)
 setwd('../results')
-Cairo::CairoPDF(file = 'delta_z_distribution.pdf',
+pdf_function(file = 'delta_z_distribution.pdf',
                 width = 12,
                 height = 10)
 par(mfrow = c(6, 6))
@@ -361,7 +370,7 @@ dev.off()
 #Make an overall histogram for publication
 setwd(this.dir)
 setwd('../results')
-Cairo::CairoPDF(file = 'delta_z_distribution_overall.pdf',
+pdf_function(file = 'delta_z_distribution_overall.pdf',
                 width = 4,
                 height = 3)
 delta_z_histogram(differential_calls)
@@ -424,7 +433,7 @@ differential_count <-
                Gene_y == gene)
     ))
   })
-Cairo::CairoPDF(file = 'differential_inters_by_gene.pdf',
+pdf_function(file = 'differential_inters_by_gene.pdf',
                 width = 4,
                 height = 4)
 hist(
@@ -447,7 +456,7 @@ reversal_count <-
     ))
   })
 
-Cairo::CairoPDF(file = 'sign_reversals_by_gene.pdf',
+pdf_function(file = 'sign_reversals_by_gene.pdf',
                 width = 4,
                 height = 4)
 hist(
