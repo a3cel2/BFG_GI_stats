@@ -1,5 +1,5 @@
 devtools::use_package('dplyr')
-devtools::use_package('ExtDist')
+#devtools::use_package('ExtDist')
 
 #' Adds p-value columns to the genetic interaction data
 #'
