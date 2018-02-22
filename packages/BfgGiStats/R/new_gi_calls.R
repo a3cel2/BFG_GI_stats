@@ -119,11 +119,13 @@ add_p_values <- function(gi_data,
         xlab = expression(Z[GIS]),
         freq = F,
         add = F,
+        axes = F,
         col = rgb(1, 0, 0, 0.7),
         border = NA,
         ylim = c(0, max(c(
           y_limits1, y_limits2
-        )))
+        ))),
+        cex.lab = 1.5
       )
       
       
@@ -137,6 +139,13 @@ add_p_values <- function(gi_data,
         col = rgb(0, 0, 0, 0.7)
       )
       lines(line_range, dnorm(line_range, mean = mu, sd = sigma))
+      
+      
+      box(bty = 'l')
+      par(las= 3)
+      axis(side = 1)
+      par(las= 1)
+      axis(side = 2)
     }
     p_values_pos <- precision_list[[1]]
     p_values_neg <- precision_list[[2]]

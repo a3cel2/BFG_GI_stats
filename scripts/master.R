@@ -30,33 +30,24 @@ setwd('../data')
 
 #Read in genetic interaction data from two tables, using sum column from second table
 gi_data_original <-
-  read.table('table_s1_input.tsv',
+  read.table('table_s2.txt',
              head = T,
              stringsAsFactors = F)
-#Remove count data from first table
-gi_data_original <- gi_data_original[, -grep('^C_', colnames(gi_data_original))]
 
 
 
-#Can change this to look at only one of the two technical replicates, analyzes the sum by default
+#Can change this to look at only one of the two technical replicates, analyzes both by default
 #Change  to 'R1' or 'R2' to look at one of the two only
 to_analyze <- c('R1','R2')
 
 
 
 #Update linkage removal criteria to 75kb
-#gi_data_original[gi_data_original$Chromosomal_distance_bp <= 75000 &
-#          !is.na(gi_data_original$Chromosomal_distance_bp), 'Remove_by_Chromosomal_distance_or_SameGene'] <-
-#  'YES'
-#Remove non well-measured strains
+gi_data_original[gi_data_original$Chromosomal_distance_bp <= 75000 &
+          !is.na(gi_data_original$Chromosomal_distance_bp), 'Remove_by_Chromosomal_distance_or_SameGene'] <-
+  'YES'
 
-
-
-
-#For troubleshooting/checking
-#gi_data_original <- gi_data
-
-#Change genetic interactions and significance calls
+#Lists the doubling times for each pool and technical replicate
 doubling_vec <- list(R1 =  c('NoDrug' = 12.24,
                              'DMSO' = 8.2,
                              'MMS' = 7.8,
@@ -85,24 +76,29 @@ for(i in 1:length(to_analyze)){
   analyze_now <- to_analyze[i]
   
   grep_pattern1 <- sprintf('^C_xy.*%s', analyze_now)
-  grep_pattern2 <- sprintf('.%s', analyze_now)
+  grep_pattern2 <- sprintf('^C_xy', analyze_now)
   
-  gi_data_2 <-
-    read.table('Cxy_Table_WithReplicates.txt',
-               head = T,
-               stringsAsFactors = F)
+  
   gi_data <-
-    cbind(gi_data_original, gi_data_2[, grep(grep_pattern1, colnames(gi_data_2))])
-  colnames(gi_data) <- gsub(grep_pattern2, '', colnames(gi_data))
+    gi_data_original[, c(
+      grep(
+        grep_pattern2,
+        colnames(gi_data_original),
+        val = T,
+        invert = T
+      ),
+      grep(grep_pattern1, colnames(gi_data_original), val = T)
+    )]
   
   
-  well_measured <- gi_data[, grep('HetDipl', colnames(gi_data))] >= 50
-  gi_data <- gi_data[well_measured,]
+  #Remove non well-measured strains
+  #Comment out the next two lines to allow comparison of same-same pairs in well-measured vs non
+  well_measured <- gi_data[, grep('HetDipl', colnames(gi_data))] >= 30
+  gi_data <- gi_data[well_measured, ]
   
-  #gi_data <- gi_data[grep('MMS4_donor',gi_data$Barcode_x,invert=T),]
-  #gi_data <- gi_data[grep('MUS81_donor',gi_data$Barcode_x,invert=T),]
-  #gi_data <- gi_data[grep('MMS4_recipient',gi_data$Barcode_y,invert=T),]
-  #gi_data <- gi_data[grep('MUS81_recipient',gi_data$Barcode_y,invert=T),]
+  new_colnames <- colnames(gi_data)[grep(grep_pattern1,colnames(gi_data))]
+  new_colnames <- sapply(new_colnames,function(name){gsub(paste(c('_',analyze_now),collapse=''),'',name)})
+  colnames(gi_data)[grep(grep_pattern1,colnames(gi_data))] <- new_colnames
   
   
   new_gis <- update_gis(gi_data,
@@ -121,28 +117,42 @@ for(i in 1:length(to_analyze)){
 }
 
 
-
-#Instead of a poisson error model for double mutant fitness, add a global model for each condition
+#Estimate double mutant error globally
 gi_data <- update_error_model_by_replicates(gi_data_combined)
-gi_data <- gi_data[, -grep('CMPT', colnames(gi_data))]
 
 
-#Analyze linkage patterns to justify above removal criteria
+#Analyze linkage patterns to illustrate new removal criteria
 setwd(this.dir)
+neutral_gi_data <- filter(gi_data,Type_of_gene_x == 'Neutral' | Type_of_gene_y == 'Neutral')
 dir.create('../results', showWarnings = FALSE)
 setwd('../results')
 Cairo::CairoPDF(file = 'GIS_NoDrug_vs_distance.pdf',
-                width = 4,
-                height = 4)
-par(mar=c(4.5,4.5,1,1))
-plot(log10(gi_data$Chromosomal_distance_bp + 1),
-     gi_data$GIS_xy.NoDrug,
+                width = 4.5,
+                height = 3.5)
+par(mar=c(4.5,5,1,2))
+gi_cols <- grep('^GIS',colnames(neutral_gi_data))
+plot(log10(rep(neutral_gi_data$Chromosomal_distance_bp,length(gi_cols)) + 1),
+     as.matrix(neutral_gi_data[,gi_cols]),
      xlab = expression(Log[10](Chromosomal~dist.~+1)),
-     ylab = expression(GIS[xy]~(no~Drug)),
+     ylab = expression(GIS[xy]~(neutral~pairs)),
      pch = 16,
-     col=rgb(0,0,0,0.3))
+     col=rgb(0,0,0,0.3),
+     las = 1,
+     bty = 'l',
+     cex.lab = 1.7)
 abline(v= log10(75001),col='red',lty=3,lwd=2)
 dev.off()
+
+#Make Fig 2 panel
+setwd(this.dir)
+setwd('../results')
+Cairo::CairoPDF(file = 'GIS_by_linkage.pdf',
+                width = 4.5,
+                height = 4)
+gis_vs_linkage_hist(gi_data)
+dev.off()
+
+
 
 #Plot z distribution
 setwd(this.dir)
@@ -151,7 +161,7 @@ Cairo::CairoPDF(file = 'Z_distribution.pdf',
                 width = 10,
                 height = 4)
 par(mfrow = c(2, 5))
-par(mar = c(5, 4, 2, 0))
+par(mar = c(5, 4.1, 2, 0))
 gi_data <- add_p_values(
   gi_data,
   z_grep_pattern = "^Z_GIS",
@@ -160,35 +170,65 @@ gi_data <- add_p_values(
 )
 dev.off()
 
-
+#Filter out camptothecin
+gi_data <- gi_data[, -grep('CMPT', colnames(gi_data))]
 
 #Preserve at this step for differential gi_calls
 gi_data_old <- gi_data
 
-## Reviewer plot, have to temporarily allow non well-measured for this plot to work
+
+## Reviewer plot, have to temporarily allow non well-measured above for this plot to work
 # setwd(this.dir)
 # setwd('../results')
 # cut <- 30
 # Cairo::CairoPDF(file = 'gis_well_measured_vs_non.pdf',
-#                 width = 4,
+#                 width = 4.5,
 #                 height = 3.5)
-# par(mar=c(4,4,3,1))
-# plot(density(as.matrix(
+# par(mar=c(4,4.5,3,1))
+# 
+# same_same_gis_well_measured <- as.matrix(
 #   gi_data_old %>% dplyr::filter(C_xy.HetDipl >= cut, Chromosomal_distance_bp == 0) %>% dplyr::select(grep('^GIS_xy.', colnames(gi_data_old)))
-# )), xlim = c(-1.1, 0.5),lwd=2,col='red',xlab='GIS',main='GIS of Same-Same Pairs')
-# lines(density(as.matrix(
-#   gi_data_old %>% dplyr::filter(C_xy.HetDipl < cut, Chromosomal_distance_bp == 0) %>% dplyr::select(grep('^GIS_xy.', colnames(gi_data_old)))
-# )),
-# col='blue',
-# lwd='2'
 # )
-# legend(-0.1,3,
+# 
+# same_same_gis_non_well_measured <- as.matrix(
+#   gi_data_old %>% dplyr::filter(C_xy.HetDipl < cut, Chromosomal_distance_bp == 0) %>% dplyr::select(grep('^GIS_xy.', colnames(gi_data_old)))
+# )
+# 
+# h1 <- hist(c(same_same_gis_well_measured,same_same_gis_non_well_measured),breaks=100,plot=F)
+# h2 <- hist(c(same_same_gis_well_measured),breaks=100,plot=F)
+# h3 <- hist(c(same_same_gis_non_well_measured),breaks=100,plot=F)
+# 
+# hist(
+#   same_same_gis_non_well_measured,
+#   breaks = h1$breaks,
+#   ylim = c(0, max(c(
+#     h2$density, h3$density
+#   ))),
+#   freq = F,
+#   border = NA,
+#   col = rgb(1,0,0,0.5),
+#   xlab='GIS',
+#   main = 'GIS of Same-Gene Pairs',
+#   cex.lab = 1.7
+# )
+# hist(
+#   same_same_gis_well_measured,
+#   breaks = h1$breaks,
+#   ylim = c(0, max(c(
+#     h2$density, h3$density
+#   ))),
+#   freq = F,
+#   border = NA,
+#   col = rgb(0,0,1,0.5),
+#   main = '',
+#   add = T
+# )
+# legend(-0.65,3.5,
 #        legend=c(expression(C[xy]>=30),
 #                 expression(C[xy]<30)),
-#        col=c('red','blue'),
+#        col=c('blue','red'),
 #        pch=15)
 # dev.off()
-
 
 
 
@@ -205,7 +245,6 @@ dev.off()
 #Calculate a per-gene GI score, Z score, and p value
 ########
 
-
 gi_data <- average_gi_data_by_gene(gi_data)
 
 
@@ -216,9 +255,11 @@ Cairo::CairoPDF(file = 'gene_averaged_p_value_histogram.pdf',
 hist(as.matrix(gi_data[, grep('^P.neutral', colnames(gi_data))]),
      main = '',
      xlab = 'p-value',
-     col = 'grey30')
+     ylab = 'Number of Interactions',
+     col = 'grey30',
+     las = 1,
+     cex.lab = 1.5)
 dev.off()
-
 
 
 #Calculate FDR from per-gene p values
@@ -234,102 +275,36 @@ fdr_colnames <-
 
 colnames(gi_data)[grep('^P.neutral', colnames(gi_data))] <- fdr_colnames
 
-#Precision at the 0.05,0.07 GIs cutoffs
+#Precision/recall at the 0.05,0.07 GIs cutoffs
 setwd(this.dir)
 setwd('../results')
-Cairo::CairoPDF(file = 'gi_prec_vs_st_onge.pdf',
-                width = 4.5,
-                height = 4)
-precision_vs_stonge(
-  gi_data,
-  fdr_cutoff = 0.01,
-  xlims = c(-0.12, 0.12),
-  cutoffs_drawn = c(0.07,0.05)
-)
+Cairo::CairoPDF(file = 'prec_rec_vs_st_onge.pdf',
+                width = 9.4,
+                height = 3.8)
+prec_rec_vs_stonge(gi_data, fdr_cutoff = 0.01,cutoffs_drawn = c(-0.075,0.075))
 dev.off()
-
-
-#Performance heatmaps in precision and recall as a function of FDR and GIS cutoff
-setwd(this.dir)
-setwd('../results')
-
-performance_data <- gi_data
-performance_data[, grep('^FDR', colnames(performance_data))] <-
-  -log10(performance_data[, grep('^FDR', colnames(performance_data))]) *
-  sign(performance_data[, grep('^GI', colnames(performance_data))])
-
-
-prec_vs_st_onge <- make_performance_matrix(performance_data,metr='prec',y_cutoff_vec = seq(0,0.1,length.out=50),
-                                           x_cutoff_vec = seq(0,8,length.out=50))
-rec_vs_st_onge <- make_performance_matrix(performance_data,metr='rec',y_cutoff_vec = seq(0,0.1,length.out=50),
-                                          x_cutoff_vec = seq(0,8,length.out=50))
-
-perf_data <- list(prec_vs_st_onge,rec_vs_st_onge)
-names(perf_data) <- c('prec','rec')
-directions <- c('positive_interactions','negative_interactions')
-
-for(i in 1:length(perf_data)){
-  for(j in 1:length(directions)){
-    
-    if(names(perf_data)[i] == 'prec'){
-      legend_title <- 'Precision'
-      min_val <- 0.3
-      max_val <- 0.9
-    }else if(names(perf_data)[i] == 'rec'){
-      legend_title <- 'Recall'
-      min_val <- 0.2
-      max_val <- 0.8
-    }
-    
-    if(directions[j] == 'positive_interactions'){
-      main_title <- '(positive GIs)'
-    }else if(directions[j] == 'negative_interactions'){
-      main_title <- '(negative GIs)'
-    }
-    
-    
-    filename <- sprintf('%s vs St. Onge %s.pdf',legend_title,main_title)
-    Cairo::CairoPDF(file = filename,
-                    width = 5,
-                    height = 4)
-    performance_heatmap(
-      perf_data[[i]][[directions[j]]],
-      xlab = '-Log10(FDR) Threshold',
-      ylab = 'GIS Threshold',
-      min_val = min_val,
-      max_val = max_val,
-      highlight_max_vals = F,
-      add_legend = T,
-      legend_title = legend_title,
-      main = sprintf('%s vs St. Onge %s',legend_title,main_title)
-    )
-    dev.off()
-    
-  }
-}
-
 
 #Make AUC plot
 setwd(this.dir)
 setwd('../results')
 
 Cairo::CairoPDF(file = 'auc_vs_st_onge_new.pdf',
-                width = 11,
+                width = 12,
                 height = 4)
 par(mfrow = c(1, 3))
+par(mar=c(5,5,5,5))
 st_onge_auc_plot(gi_data)
 dev.off()
 
-#stop()
 
 #Update calls based on 1% FDR cutoffs
 #Effect size cutoffs are 
 gi_data <- update_calls(
   gi_data,
-  fdr_cutoff_pos = 0.01,#0.01,
-  gi_cutoff_pos = 0.05,#.05,
-  fdr_cutoff_neg = 0.01,#0.01,#0.01,
-  gi_cutoff_neg = -0.08#.05
+  fdr_cutoff_pos = 0.01,
+  gi_cutoff_pos = 0.075,
+  fdr_cutoff_neg = 0.01,
+  gi_cutoff_neg = -0.075
 )
 
 
@@ -354,14 +329,14 @@ write.table(
   row.names = F,
   quote = F,
   sep = '\t',
-  file = 'table_s1.tsv'
+  file = 'table_s3.txt'
 )
 write.table(
   gi_data,
   row.names = F,
   quote = F,
   sep = '\t',
-  file = 'table_s1_genewise.tsv'
+  file = 'table_s4.txt'
 )
 
 ##Make/write differential calls
@@ -383,6 +358,15 @@ differential_calls <- differential_gi_analysis(
 )
 dev.off()
 
+#Make an overall histogram for publication
+setwd(this.dir)
+setwd('../results')
+Cairo::CairoPDF(file = 'delta_z_distribution_overall.pdf',
+                width = 4,
+                height = 3)
+delta_z_histogram(differential_calls)
+dev.off()
+
 setwd(this.dir)
 setwd('../data/output')
 write.table(
@@ -390,7 +374,7 @@ write.table(
   row.names = F,
   quote = F,
   sep = '\t',
-  file = 'table_s2_all.tsv'
+  file = 'table_s5.tsv'
 )
 
 
@@ -424,7 +408,7 @@ write.table(
   row.names = F,
   quote = F,
   sep = '\t',
-  file = 'table_s2_significant.tsv'
+  file = 'table_s6.txt'
 )
 
 
@@ -447,8 +431,8 @@ hist(
   differential_count,
   breaks = 20,
   col = rgb(0, 0, 0, 0.7),
-  xlab = 'Number of Differential Pairs',
-  ylab = 'Frequency (number of genes)',
+  xlab = 'Number of Significant Differential Pairs',
+  ylab = 'Number of genes',
   main = ''
 )
 dev.off() 
@@ -470,11 +454,11 @@ hist(
   reversal_count,
   breaks = 20,
   col = rgb(0, 0, 0, 0.7),
-  xlab = 'Number of Sign-Reversed Pairs',
-  ylab = 'Frequency (number of genes)',
+  xlab = 'Number of Significant Sign-Reversed Pairs',
+  ylab = 'Number of genes',
   main = ''
 )
 dev.off()
 
-#For re-running
+#Reset directory
 setwd(this.dir)

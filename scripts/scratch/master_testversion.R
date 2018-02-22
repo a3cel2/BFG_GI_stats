@@ -97,6 +97,8 @@ gi_data <- update_gis(gi_data,
                                       'CSPL' = 8.44))
 
 
+stop()
+
 #Add p values columns
 setwd(this.dir)
 setwd('../results')

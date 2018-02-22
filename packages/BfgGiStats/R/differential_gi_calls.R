@@ -233,6 +233,84 @@ differential_gi_analysis <- function(gi_data,
   return(ret_df)
 }
 
+
+delta_z_histogram <- function(differential_calls,
+                              max_val = 5,
+                              min_val = -5,
+                              nbreaks = 300) {
+  diff_calls_neutral <-
+    filter(differential_calls,
+           Type_of_gene_x == 'Neutral',
+           Type_of_gene_y == 'Neutral')
+  diff_calls_ddr <-
+    filter(differential_calls,
+           Type_of_gene_x == 'DNA_repair',
+           Type_of_gene_y == 'DNA_repair')
+  h1 <- hist(diff_calls_ddr$DeltaZ, breaks = nbreaks, plot = F)
+  h2 <-
+    hist(diff_calls_neutral$DeltaZ,
+         breaks = h1$breaks,
+         plot = F)
+  y_max <- max(c(h2$density, h1$density))
+  
+  
+  par(mar = c(4, 4.5, 1, 1))
+  delta_z_ddr <- diff_calls_ddr$DeltaZ
+  delta_z_ddr[delta_z_ddr < min_val] <- min_val
+  delta_z_ddr[delta_z_ddr > max_val] <- max_val
+  
+  hist(
+    delta_z_ddr,
+    breaks = h1$breaks,
+    freq = F,
+    ylim = c(0, y_max),
+    border = NA,
+    col = rgb(1, 0, 0, 0.5),
+    main = '',
+    xlab = '',
+    ylab = '',#bquote(Delta ~ Z[GIS]),
+    cex.lab = 1.5,
+    cex.axis = 1.5,
+    xlim = c(min_val, max_val),
+    axes = F
+  )
+  box(bty = 'l')
+  hist(
+    diff_calls_neutral$DeltaZ,
+    breaks = h1$breaks,
+    add = T,
+    border = NA,
+    col = rgb(0, 0, 0, 0.8),
+    freq = F,
+    ylim = c(0, y_max)
+  )
+  #par(las = 3)
+  breakpoints <- seq(min_val,max_val)
+  labels <- sapply(breakpoints,as.character)
+  
+  labels <- sapply(labels,function(label){
+    if(as.numeric(label) == min_val){
+      label <- paste('phantom(.)','<=',label,collapse='.')
+    }else if(as.numeric(label) == max_val){
+      label <- paste('phantom(.)','>=',label,collapse='.')
+    }
+    return(label)
+    
+  })
+  #labels[1] <- bquote(paste("<="~.(labels[1]),sep=''))
+  #labels[length(labels)] <- expression(">=")
+  par(las = 3)
+  axis(side=1,at=breakpoints,labels = parse(text = labels))
+  
+  par(las = 1)
+  mtext(bquote(Delta~Z[GIS]),side=1,line = 3, cex = 1.5)
+  
+  
+  axis(side=2)
+  par(las = 3)
+  mtext('Density',side=2,cex=1,line=2.5)
+}
+
 # A histogram function for diagnosis, no longer used
 # differential_calls_histogram <- function(differential_calls){
 #   orig_hist <-

@@ -12,7 +12,7 @@ update_gis <- function(gi_data,
                        #Old parameter, to use only well-measured pairs, no longer needed
                        #well_measured_cutoff = 100,
                        #This defines the number of generations each pool grew
-                       pseudocount = 1,#e-200,
+                       pseudocount = 0.5,
                        count_data_grep_pattern = '^C_',
                        g_wt_vec) {
   #Define special pairs
@@ -55,8 +55,8 @@ update_gis <- function(gi_data,
   g_xy_error <- abs(r_xy_error/(r_xy_data*log(2)))
   
   #wt fitness estimate and error
-  #g_xy_wt <- apply(g_xy_data[nn_pairs,],2,mean)
-  g_xy_wt <- apply(g_xy_data[nn_pairs,],2,median)
+  g_xy_wt <- apply(g_xy_data[nn_pairs,],2,mean)
+  #g_xy_wt <- apply(g_xy_data[nn_pairs,],2,median)
   g_wt_error <- apply(g_xy_data[nn_pairs,],2,function(x){sd(x)})#sqrt(length(x))})
   
   #Normalize fitness by wildtype
@@ -70,10 +70,17 @@ update_gis <- function(gi_data,
   
   
   w_xy_single_barcodes <- t(sapply(barcodes, function(barcode) {
+    gene <- barcode
+    #gene <- strsplit(barcode,split='_')[[1]][1]
+    #gene <- paste(c(gene,'donor'),collapse='_')
+    
     criteria <-
-      gi_data[, 1] == barcode &
-      gi_data$Type_of_gene_y == 'Neutral' |
-      gi_data[, 2] == barcode & gi_data$Type_of_gene_x == 'Neutral'
+      #gi_data[, 1] == barcode &
+      (grepl(gene, gi_data[,1]) &
+      gi_data$Type_of_gene_y == 'Neutral') |
+      #gi_data[, 2] == barcode &
+      (grepl(gene, gi_data[,2]) &
+      gi_data$Type_of_gene_x == 'Neutral')
     criteria <-
       criteria &
       gi_data$Remove_by_Chromosomal_distance_or_SameGene == 'no'
@@ -85,13 +92,22 @@ update_gis <- function(gi_data,
     
     #return(apply(w_xy_data[criteria, ], 2, mean))
     return(apply(w_xy_data[criteria, ], 2, median))
+    #return(w_xy_data[criteria, ])
   }))
   
   g_xy_single_barcodes <- t(sapply(barcodes, function(barcode) {
+    gene <- barcode
+    #gene <- strsplit(barcode,split='_')[[1]][1]
+    #gene <- paste(c(gene,'donor'),collapse='_')
+    
     criteria <-
-      gi_data[, 1] == barcode &
-      gi_data$Type_of_gene_y == 'Neutral' |
-      gi_data[, 2] == barcode & gi_data$Type_of_gene_x == 'Neutral'
+      (grepl(gene, gi_data[,1]) &
+         gi_data$Type_of_gene_y == 'Neutral') |
+      (grepl(gene, gi_data[,2]) &
+         gi_data$Type_of_gene_x == 'Neutral')
+      #gi_data[, 1] == barcode &
+      #gi_data$Type_of_gene_y == 'Neutral' |
+      #gi_data[, 2] == barcode & gi_data$Type_of_gene_x == 'Neutral'
     criteria <-
       criteria &
       gi_data$Remove_by_Chromosomal_distance_or_SameGene == 'no'
@@ -100,16 +116,25 @@ update_gis <- function(gi_data,
     #  criteria &
     #  gi_data$C_xy.HetDipl >= well_measured_cutoff
     
-    return(apply(g_xy_data[criteria, ], 2, median))
+    return(apply(g_xy_data[criteria, ], 2, mean))
   }))
   
   
   #Using standard error of mean as error
   g_xy_error_single_barcodes <- t(sapply(barcodes, function(barcode) {
+    gene <- barcode
+    #gene <- strsplit(barcode,split='_')[[1]][1]
+    #gene <- paste(c(gene,'donor'),collapse='_')
+    
     criteria <-
-      gi_data[, 1] == barcode &
-      gi_data$Type_of_gene_y == 'Neutral' |
-      gi_data[, 2] == barcode & gi_data$Type_of_gene_x == 'Neutral'
+      (grepl(gene, gi_data[,1]) &
+         gi_data$Type_of_gene_y == 'Neutral') |
+      (grepl(gene, gi_data[,2]) &
+         gi_data$Type_of_gene_x == 'Neutral')
+    #criteria <-
+    #  gi_data[, 1] == barcode &
+    #  gi_data$Type_of_gene_y == 'Neutral' |
+    #  gi_data[, 2] == barcode & gi_data$Type_of_gene_x == 'Neutral'
     criteria <-
       criteria &
       gi_data$Remove_by_Chromosomal_distance_or_SameGene == 'no'
