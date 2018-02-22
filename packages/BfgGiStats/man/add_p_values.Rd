@@ -13,6 +13,12 @@ add_p_values(gi_data, nn_pair_type = "broad", z_grep_pattern = "^Z_GIS",
 \item{nn_pair_type}{"null distribution" of GI scores used to
 compute p-values. Either 'broad' for all interactions with neutral
 pairs or 'narrow' for only neutral-neutral pairs}
+
+\item{z_grep_pattern}{grep pattern to find Z_GIS columns}
+
+\item{gi_grep_pattern}{grep pattern to find GIS columns}
+
+\item{make_plots}{boolean, whether to make a histogram of p-value distribution}
 }
 \value{
 gi_data with p values added

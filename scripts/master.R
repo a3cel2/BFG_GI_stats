@@ -129,28 +129,6 @@ for(i in 1:length(to_analyze)){
 gi_data <- update_error_model_by_replicates(gi_data_combined)
 
 
-#Analyze linkage patterns to illustrate new removal criteria
-setwd(this.dir)
-neutral_gi_data <- filter(gi_data,Type_of_gene_x == 'Neutral' | Type_of_gene_y == 'Neutral')
-dir.create('../results', showWarnings = FALSE)
-setwd('../results')
-pdf_function(file = 'GIS_NoDrug_vs_distance.pdf',
-                width = 4.5,
-                height = 3.5)
-par(mar=c(4.5,5,1,2))
-gi_cols <- grep('^GIS',colnames(neutral_gi_data))
-plot(log10(rep(neutral_gi_data$Chromosomal_distance_bp,length(gi_cols)) + 1),
-     as.matrix(neutral_gi_data[,gi_cols]),
-     xlab = expression(Log[10](Chromosomal~dist.~+1)),
-     ylab = expression(GIS[xy]~(neutral~pairs)),
-     pch = 16,
-     col=rgb(0,0,0,0.3),
-     las = 1,
-     bty = 'l',
-     cex.lab = 1.7)
-abline(v= log10(75001),col='red',lty=3,lwd=2)
-dev.off()
-
 #Make Fig 2 panel
 setwd(this.dir)
 setwd('../results')
@@ -255,6 +233,42 @@ dev.off()
 ########
 
 gi_data <- average_gi_data_by_gene(gi_data)
+
+
+#Analyze linkage patterns to illustrate new removal criteria
+setwd(this.dir)
+neutral_gi_data <- filter(gi_data,Type_of_gene_x == 'Neutral' | Type_of_gene_y == 'Neutral')
+dir.create('../results', showWarnings = FALSE)
+setwd('../results')
+pdf_function(file = 'GIS_neutrals_vs_distance.pdf',
+             width = 4.5,
+             height = 3.5)
+par(mar=c(5,5,1,2))
+gi_cols <- grep('^GIS',colnames(neutral_gi_data))
+plot(rep(neutral_gi_data$Chromosomal_distance_bp,length(gi_cols))/1000 + 1,
+     as.matrix(neutral_gi_data[,gi_cols]),
+     xlab = '',#expression(Chromosomal~distance~(kb)),
+     ylab = expression(GIS[xy]~(neutral~pairs)),
+     pch = 16,
+     log = 'x',
+     axes = F,
+     col=rgb(0,0,0,0.3),
+     las = 1,
+     bty = 'l',
+     cex.lab = 1.7)
+dummy_x <- axTicks(1)
+labels_x <- dummy_x
+labels_x[1] <- 0
+par(las = 3)
+axis(side = 1 , labels = labels_x, at = dummy_x)
+par(las = 1)
+mtext(expression(Chromosomal~distance~(kb)),side = 1, line = 4, cex = 1.7)
+axis(side = 2)
+box(bty = 'l')
+abline(v= 75,col='red',lty=2,lwd=2)
+text(85,-0.5,'Linkage\ncutoff: 75kb',adj=c(0,0),cex=1.3)
+
+dev.off()
 
 
 #Make sure p-value distribution looks sane
@@ -440,7 +454,7 @@ hist(
   differential_count,
   breaks = 20,
   col = rgb(0, 0, 0, 0.7),
-  xlab = 'Number of Significant Differential Pairs',
+  xlab = 'Significant Differential GIs',
   ylab = 'Number of genes',
   main = ''
 )
@@ -463,7 +477,7 @@ hist(
   reversal_count,
   breaks = 20,
   col = rgb(0, 0, 0, 0.7),
-  xlab = 'Number of Significant Sign-Reversed Pairs',
+  xlab = 'Significant Sign-Reversed GIs',
   ylab = 'Number of genes',
   main = ''
 )

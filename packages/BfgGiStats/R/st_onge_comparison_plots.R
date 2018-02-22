@@ -1,9 +1,9 @@
-#devtools::use_package('ROCR')
-#devtools::use_package('dplyr')
+devtools::use_package('ROCR')
+devtools::use_package('dplyr')
 
 
 #Used for calculating AUC
-#' Trapezoid method for integration
+#Trapezoid method for integration
 trapezoid_integration <- function(x, y) {
   area_sum <- 0
   for (i in 2:length(x)) {
@@ -808,7 +808,7 @@ prec_rec_vs_stonge <- function(gi_data,
                                ylab1 = 'Precision (%)',
                                ylab2 = 'Recall (%)',
                                draw_cutoffs = T,
-                               legend_pos = c(0,30),
+                               legend_pos = c(0,27),
                                cutoffs_drawn = c(-0.07,0.07)) {
   #Filter
   gi_data_filtered <-
@@ -902,11 +902,15 @@ prec_rec_vs_stonge <- function(gi_data,
       axes = F,
       cex.main = 1.3
     )
+    tickmarks_x <- axTicks(1)
+    tickmarks_x[which.min(abs(tickmarks_x - cutoffs_drawn[i]))] <- cutoffs_drawn[i]
+    
+    
     par(las = 1)
     axis(side = 4)
     axis(side = 2)
     par(las = 3)
-    axis(side = 1)
+    axis(side = 1, at = tickmarks_x)
     
     mtext(side = 4, line = 2.5, ylab2,cex = 1.3)
     mtext(side = 2, line = 2.5, ylab1,cex = 1.3)
@@ -936,8 +940,12 @@ prec_rec_vs_stonge <- function(gi_data,
       p1_text <- paste(c(metr1_name,': ',format(p1,digits=2),'%'),collapse='')
       p2_text <- paste(c(metr2_name,': ',format(p2,digits=2),'%'),collapse='')
       
-      text(cutoffs_drawn[i] - 0.05*cutoffs_drawn[i],p1 + 0.05*p1,p1_text,adj=c(1,0),cex=1.2)
-      text(cutoffs_drawn[i] - 0.05*cutoffs_drawn[i],p2 - 0.05*p2,p2_text,adj=c(1,1),cex=1.2)
+      text(cutoffs_drawn[i] - 0.1*cutoffs_drawn[i],p1 + 6,p1_text,adj=c(1,0),cex=1.2)
+      text(cutoffs_drawn[i] - 0.1*cutoffs_drawn[i],p2 - 6,p2_text,adj=c(1,1),cex=1.2)
+      
+      lines(c(cutoffs_drawn[i] - 0.1*cutoffs_drawn[i], cutoffs_drawn[i]),c(p1 + 6 , p1))
+      lines(c(cutoffs_drawn[i] - 0.1*cutoffs_drawn[i], cutoffs_drawn[i]),c(p2 - 6 , p2))
+      
     }
   }
 }

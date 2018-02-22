@@ -16,15 +16,19 @@ update_calls(gi_data, z_score_cols = NULL, fdr_cols = NULL,
 
 \item{fdr_cols}{which columns correspond to internal FDRs - default is to use grep to find automatically}
 
-\item{z_cutoff_neg}{if use_z is True, Z-cutoff for negative interactions}
+\item{gi_cols}{which columns correspond to GI scores - default is to use grep to find automatically}
 
-\item{z_cutoff_pos}{if use_z is True, Z-cutoff for positive interactions}
+\item{fdr_cutoff_pos}{FDR cutoff for positive interactions}
 
-\item{z_class_cols}{which columns correspond to Z-based classifications - default is to use grep to find automatically}
+\item{fdr_cutoff_neg}{FDR cutoff for negative interactions}
 
-\item{fdr_cutoff}{internal FDR cutoff to make GI calls - defaults to 0.05}
+\item{z_cutoff_neg}{Z_GIS  cutoff for negative interactions}
 
-\item{use_z}{use Z scores instead of FDR to make GI calls? defaults to False}
+\item{z_cutoff_pos}{Z_GIS cutoff for positive interactions}
+
+\item{gi_cutoff_neg}{GIS cutoff for negative interactions}
+
+\item{gi_cutoff_pos}{GIS cutoff for positive interactions}
 }
 \value{
 a version of gi_data with GI calls updated

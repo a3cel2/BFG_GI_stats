@@ -12,6 +12,8 @@ differential_gi_analysis(gi_data, fdr_cutoff = 0.05, delta_gi_cutoff = 0,
 
 \item{fdr_cutoff}{false discovery rate cutoff for calling significant GI changes}
 
+\item{delta_gi_cutoff}{effect size cutoff (delta GIS) on top of fdr_cutoff}
+
 \item{require_sign_change}{require different GI classifications in order to call a differential interaction; True or False}
 
 \item{nn_pair_type}{null distribution" of GI scores used to

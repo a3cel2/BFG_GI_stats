@@ -37,6 +37,7 @@ gis_vs_linkage_hist <- function(gi_data,
     ))),
     border = NA,
     xlab = expression(bold('GIS')),
+    ylab = 'Prob. density',
     main = '',
     cex.lab = 1.5,
     cex.axis = 1.5

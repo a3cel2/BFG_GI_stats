@@ -16,6 +16,8 @@ st_onge_scatterplot(gi_data, control_name = "NoDrug",
 \item{condition_name}{condition which corresponds to 'MMS' in the St onge data}
 
 \item{gi_prefix}{pasted with control_name and condition_name to find the raw GI columns}
+
+\item{point_col}{point colour}
 }
 \description{
 Creates a scatterplot of genetic interaction scores vs St. Onge
