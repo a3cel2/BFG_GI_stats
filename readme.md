@@ -4,7 +4,7 @@ Statistical analysis of genetic interactions mapped using Barcode Fusion Genetic
 
 ## Getting Started
 
-To analyze genetic interactions from the raw number of sequencing reads (C_xy) you just need to run 'master.R' . The only data used is table_s1.tsv (C_xy) and Cxy_Table_WithReplicates.txt in the 'data' folder. All newly made functions for master.R are in the packages folder. See below for other 'Dependencies'.  This script performs several tasks - including GIS calculation, Z_GIS calculation, FDR calculation, genetic interaction calls, and differential genetic interaction calls.
+To analyze genetic interactions from the raw number of sequencing reads (C_xy) run 'master.R' . The input data used is table_s2.txt. All functions called by master.R are in the packages folder. See below for other 'Dependencies'.  This script performs several tasks - including GIS calculation, Z_GIS calculation, FDR calculation, genetic interaction calls, and differential genetic interaction calls. It reproduces several plots used in the manuscript
 
 We execute 'master.R' using the following steps:  
 a) get into the ~/.../BFG_GI_stats-master/scripts directory  
@@ -18,14 +18,11 @@ source('master.R')
 ```
 
 ## Folder Contents
-**scripts/** - contains the main script (master.R), as well as development prototypes in the scratch folder
+**scripts/** - contains the main script (master.R)
 
 **data/** - contains:
-1)  the input raw C_xy data (table_s1_input.tsv)
-2)  output tables with GIS, Z_GIS and FDR at barcode-pair level (~/data/output/table_s1.tsv)
-3)  output tables with GIS, Z_GIS and FDR at gene-pair level (~/data/output/table_s1_genewise.tsv)
-4)  output tables with Delta_Z, Delta_GI and Delta_Z_FDR for each gene-pair for each condition-pair (~/data/output/table_s2_significant.tsv)
-5)  Subset of (4) with significant pairs based on  Delta_Z_FDR (~/data/output/table_s2_significant.tsv)
+1)  the input data (table_s2.txt)
+2)  tables resulting from analysis in the output/ folder - tables s3,s4,s5,s6 in the publication
 
 **doc/** - contains an explanation of the new genetic interaction definitions and the significance calling algorithm.  The latest documentation is included in the publication
 
@@ -50,4 +47,4 @@ The following R packages must be installed prior to running master.R:
 5) ExtDist
 6) qvalue (Bioconductor)
 
-Cairo must also be properly configured to write PDF files.  Otherwise, Cairo::CairoPDF can be replaced with pdf in master.R.  Note that this will not properly write some symbols used in the plotw.
+Cairo must be installed for accurate reproduction of PDF files.  Otherwise, the base pdf funcion will be used in master.R
