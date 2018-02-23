@@ -44,7 +44,6 @@ The following R packages must be installed prior to running master.R:
 2) devtools
 3) roxygen2
 4) ROCR
-5) ExtDist
-6) qvalue (Bioconductor)
+5) qvalue (Bioconductor)
 
 Cairo must be installed for accurate reproduction of PDF files.  Otherwise, the base pdf funcion will be used in master.R
