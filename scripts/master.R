@@ -129,14 +129,6 @@ for(i in 1:length(to_analyze)){
 gi_data <- update_error_model_by_replicates(gi_data_combined)
 
 
-#Make Fig 2 panel
-setwd(this.dir)
-setwd('../results')
-pdf_function(file = 'GIS_by_linkage.pdf',
-                width = 4.5,
-                height = 4)
-gis_vs_linkage_hist(gi_data)
-dev.off()
 
 
 
@@ -233,6 +225,16 @@ dev.off()
 ########
 
 gi_data <- average_gi_data_by_gene(gi_data)
+
+#Make Fig 2 panel
+setwd(this.dir)
+setwd('../results')
+pdf_function(file = 'GIS_by_linkage.pdf',
+             width = 4.5,
+             height = 4)
+gis_vs_linkage_hist(gi_data)
+dev.off()
+
 
 
 #Analyze linkage patterns to illustrate new removal criteria
