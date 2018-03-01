@@ -45,6 +45,9 @@ differential_gi_analysis <- function(gi_data,
   ret_list <- list()
   ret_df <- c()
   
+  
+  eyo <- c()
+  gyo <- c()
   for(condition1 in conditions) {
     ret_list[[condition1]] <- list()
     for (condition2 in conditions) {
@@ -82,6 +85,9 @@ differential_gi_analysis <- function(gi_data,
         non_nn_gi_scores_cond <-
           gi_data[!nn_pairs, gi_name1] - gi_data[!nn_pairs, gi_name2]
         
+        eyo <- c(eyo,sqrt(gi_data[!nn_pairs, gi_err_name1]^2 + gi_data[!nn_pairs, gi_err_name2]^2))
+        gyo <- c(gyo,abs((gi_data[!nn_pairs, gi_name1] - gi_data[!nn_pairs, gi_name2])))
+        #stop()
         
         all_z_scores_cond <-
           (gi_data[, gi_name1] - gi_data[, gi_name2])/sqrt(gi_data[, gi_err_name1]^2 + gi_data[, gi_err_name2]^2)

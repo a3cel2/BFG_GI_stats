@@ -104,6 +104,8 @@ for(i in 1:length(to_analyze)){
   well_measured <- gi_data[, grep('HetDipl', colnames(gi_data))] >= 30
   gi_data <- gi_data[well_measured, ]
   
+  #stop()
+  
   new_colnames <- colnames(gi_data)[grep(grep_pattern1,colnames(gi_data))]
   new_colnames <- sapply(new_colnames,function(name){gsub(paste(c('_',analyze_now),collapse=''),'',name)})
   colnames(gi_data)[grep(grep_pattern1,colnames(gi_data))] <- new_colnames
@@ -125,10 +127,12 @@ for(i in 1:length(to_analyze)){
 }
 
 
+
 #Estimate double mutant error globally
 gi_data <- update_error_model_by_replicates(gi_data_combined)
 
-
+#Filter out camptothecin
+gi_data <- gi_data[, -grep('CMPT', colnames(gi_data))]
 
 
 
@@ -148,8 +152,6 @@ gi_data <- add_p_values(
 )
 dev.off()
 
-#Filter out camptothecin
-gi_data <- gi_data[, -grep('CMPT', colnames(gi_data))]
 
 #Preserve at this step for differential gi_calls
 gi_data_old <- gi_data
@@ -484,6 +486,8 @@ hist(
   main = ''
 )
 dev.off()
+
+
 
 #Reset directory
 setwd(this.dir)
