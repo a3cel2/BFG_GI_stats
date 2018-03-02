@@ -1,0 +1,12 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+**/scratch
+**/old
+**/doc
+
+#scripts/scratch
+#doc/
+#data/scratch
+#data/old
