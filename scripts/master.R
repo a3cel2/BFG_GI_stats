@@ -131,7 +131,8 @@ for(i in 1:length(to_analyze)){
 #Estimate double mutant error globally
 gi_data <- update_error_model_by_replicates(gi_data_combined)
 
-#Filter out camptothecin
+
+#Remove camptothecin - QC fail
 gi_data <- gi_data[, -grep('CMPT', colnames(gi_data))]
 
 
