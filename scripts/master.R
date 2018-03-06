@@ -125,6 +125,7 @@ for(i in 1:length(to_analyze)){
   
   gi_data_combined <- rbind(gi_data_combined,new_gis)
 }
+stop()
 
 
 
@@ -309,8 +310,13 @@ setwd('../results')
 pdf_function(file = 'prec_rec_vs_st_onge.pdf',
                 width = 9.4,
                 height = 3.8)
-prec_rec_vs_stonge(gi_data, fdr_cutoff = 0.01,cutoffs_drawn = c(-0.075,0.075))
+
+gi_effect_cut <- 0.075
+
+prec_rec_vs_stonge(gi_data, fdr_cutoff = 0.01,cutoffs_drawn = c(-gi_effect_cut,gi_effect_cut))
 dev.off()
+
+
 
 #Make AUC plot
 setwd(this.dir)
@@ -330,14 +336,14 @@ dev.off()
 gi_data <- update_calls(
   gi_data,
   fdr_cutoff_pos = 0.01,
-  gi_cutoff_pos = 0.075,
+  gi_cutoff_pos = gi_effect_cut,
   fdr_cutoff_neg = 0.01,
-  gi_cutoff_neg = -0.075
+  gi_cutoff_neg = -gi_effect_cut
 )
 
 
+
 #Make gene-wise scatterplot
-#Manuscript uses barcode-wise plot
 pdf_function(file = 'st_onge_scatterplot_genewise.pdf',
                 width = 7.5,
                 height = 3.5)

@@ -1,4 +1,3 @@
-#Test
 devtools::use_package('ROCR')
 devtools::use_package('dplyr')
 
@@ -17,7 +16,7 @@ trapezoid_integration <- function(x, y) {
 
 
 
-##Legacy function
+##Now unused function
 #' #' Plots St. Onge et al validation as a function of the internal FDR estimates
 #' #'
 #' #' @param gi_data input genetic interaction table
@@ -810,7 +809,9 @@ prec_rec_vs_stonge <- function(gi_data,
                                ylab2 = 'Recall (%)',
                                draw_cutoffs = T,
                                legend_pos = c(0,27),
-                               cutoffs_drawn = c(-0.07,0.07)) {
+                               cutoffs_drawn = c(-0.07,0.07),
+                               metr1_is_percent = T,
+                               metr2_is_percent = T) {
   #Filter
   gi_data_filtered <-
     dplyr::filter(gi_data,
@@ -864,14 +865,25 @@ prec_rec_vs_stonge <- function(gi_data,
   
   
   pos_cutoff <- pos_metr1@x.values[[1]]
-  pos_perf1 <- pos_metr1@y.values[[1]]*100
-  pos_perf2 <- pos_metr2@y.values[[1]]*100
+  
+  pos_perf1 <- pos_metr1@y.values[[1]]
+  pos_perf2 <- pos_metr2@y.values[[1]]
+  
   
   
   
   neg_cutoff <- (-1)*neg_metr1@x.values[[1]]
-  neg_perf1 <- neg_metr1@y.values[[1]]*100
-  neg_perf2 <- neg_metr2@y.values[[1]]*100
+  neg_perf1 <- neg_metr1@y.values[[1]]
+  neg_perf2 <- neg_metr2@y.values[[1]]
+  
+  if(metr1_is_percent){
+    pos_perf1 <- pos_perf1*100
+    neg_perf1 <- neg_perf1*100
+  }
+  if(metr2_is_percent){
+    pos_perf2 <- pos_perf2*100
+    neg_perf2 <- neg_perf2*100
+  }
   
   pars <- list('neg'=list(neg_cutoff,neg_perf1,neg_perf2),
                'pos'=list(pos_cutoff,pos_perf1,pos_perf2))

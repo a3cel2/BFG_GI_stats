@@ -1,5 +1,10 @@
 devtools::use_package('dplyr')
 
+
+strain_averaging_function <- function(x){
+  return(mean(x))
+}
+
 #' Update BFG-GI genetic interaction data
 #'
 #' @param gi_data input genetic interaction table
@@ -55,9 +60,9 @@ update_gis <- function(gi_data,
   g_xy_error <- abs(r_xy_error/(r_xy_data*log(2)))
   
   #wt fitness estimate and error
-  g_xy_wt <- apply(g_xy_data[nn_pairs,],2,mean)
-  #g_xy_wt <- apply(g_xy_data[nn_pairs,],2,median)
-  g_wt_error <- apply(g_xy_data[nn_pairs,],2,function(x){sd(x)})#sqrt(length(x))})
+  g_xy_wt <- apply(g_xy_data[nn_pairs,],2,strain_averaging_function)
+  
+  g_wt_error <- apply(g_xy_data[nn_pairs,],2,function(x){sd(x)})
   
   #Normalize fitness by wildtype
   w_xy_data <- t(t(g_xy_data) / g_xy_wt)
@@ -90,8 +95,8 @@ update_gis <- function(gi_data,
     #  criteria &
     #  gi_data$C_xy.HetDipl >= well_measured_cutoff
     
-    #return(apply(w_xy_data[criteria, ], 2, mean))
-    return(apply(w_xy_data[criteria, ], 2, median))
+    return(apply(w_xy_data[criteria, ], 2, strain_averaging_function))
+    #return(apply(w_xy_data[criteria, ], 2, median))
     #return(w_xy_data[criteria, ])
   }))
   
@@ -116,7 +121,7 @@ update_gis <- function(gi_data,
     #  criteria &
     #  gi_data$C_xy.HetDipl >= well_measured_cutoff
     
-    return(apply(g_xy_data[criteria, ], 2, mean))
+    return(apply(g_xy_data[criteria, ], 2, strain_averaging_function))
   }))
   
   
@@ -156,7 +161,7 @@ update_gis <- function(gi_data,
     w_xy <- w_xy_data[i, ]
     
     #Quick fix
-    #Set fitness to 0 if less than 0
+    #Set fitness to 0 if estimated less than 0
     w_x[w_x < 0] <- 0
     w_y[w_y < 0] <- 0
     w_xy[w_xy < 0] <- 0

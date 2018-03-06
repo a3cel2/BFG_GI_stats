@@ -29,7 +29,8 @@ prec_rec_vs_stonge(gi_data, control_name = "NoDrug", condition_name = "MMS",
   col1 = "#C28202", col2 = "#7C32C2", xlims = c(-0.1, 0.1), ylims = c(0,
   100), xlab = "GIS Cutoff", ylab1 = "Precision (\%)",
   ylab2 = "Recall (\%)", draw_cutoffs = T, legend_pos = c(0, 27),
-  cutoffs_drawn = c(-0.07, 0.07))
+  cutoffs_drawn = c(-0.07, 0.07), metr1_is_percent = T,
+  metr2_is_percent = T)
 }
 \arguments{
 \item{gi_data}{input genetic interaction table}

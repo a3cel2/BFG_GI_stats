@@ -131,9 +131,9 @@ average_gi_data_by_gene <-
           
           p_vals <- testset[, fdr_columns[i]]
           
-          #print(p_vals)
           
-          #metap::sumz fails for some reason with one p value...
+          #metap::sumz exits with one p value instead of just returning the value...
+          #so just return it directly
           if (length(p_vals) == 1) {
             return(p_vals)
           }
@@ -150,11 +150,11 @@ average_gi_data_by_gene <-
             p_vals[gi_scores < 0] <- 1 - p_vals[gi_scores < 0]
           }
           
-          #Next two lines stops sumz from giving error
-          #Affects several cases with extremely low p-values
-          p_vals[p_vals < 1e-200] <- 1e-200
+          #Next two lines stops metap::sumz from giving error
+          #p-values should never be 0, but can be because of float precision
+          p_vals[p_vals < .Machine$double.xmin] <- .Machine$double.xmin
           
-          #Affects 0 cases
+          #Affects no cases, but added for good measure
           if (max(p_vals) == 1) {
             return(1)
           }
@@ -246,9 +246,10 @@ average_gi_data_by_gene <-
     gi_data_grp <- gi_data_grp[, preserved_colnames]
     
     #Averaging count data doesn't really make sense
+    #So best to remove
     gi_data_grp <-
       gi_data_grp[, grep(count_column_grep, colnames(gi_data_grp), invert = T)]
-    #Samples are averaged too
+    #Samples are averaged together in this step
     gi_data_grp <- gi_data_grp[, grep("Sample", colnames(gi_data_grp), invert =T)]
     
     
@@ -261,7 +262,7 @@ average_gi_data_by_gene <-
     return(gi_data_grp)
   }
 
-# Not used
+# Not used, was experimenting with alternate filtering method
 # 
 # find_discordant_pairs <-
 #   function(gi_data,

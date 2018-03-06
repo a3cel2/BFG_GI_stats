@@ -20,11 +20,12 @@ differential_gi_analysis <- function(gi_data,
     dplyr::filter(gi_data, Remove_by_Chromosomal_distance_or_SameGene == 'no')
   
   
-  if(nn_pair_type == 'broad'){
+  if (nn_pair_type == 'broad') {
     #Can define all non DNA_repair - DNA_repair as neutral
     nn_pairs <-
-      gi_data$Type_of_gene_x != 'DNA_repair' | gi_data$Type_of_gene_y != 'DNA_repair'
-  }else if(nn_pair_type == 'narrow'){
+      gi_data$Type_of_gene_x != 'DNA_repair' |
+      gi_data$Type_of_gene_y != 'DNA_repair'
+  } else if (nn_pair_type == 'narrow') {
     #Or just neutral-neutral pairs
     nn_pairs <-
       gi_data$Type_of_gene_x == 'Neutral' &
@@ -36,18 +37,25 @@ differential_gi_analysis <- function(gi_data,
     gi_data$Type_of_gene_y == 'DNA_repair'
   
   
-  z_cols <- grep('Class',grep('Z_GIS',colnames(gi_data),val=T),invert=T,val=T)
+  z_cols <-
+    grep('Class',
+         grep('Z_GIS', colnames(gi_data), val = T),
+         invert = T,
+         val = T)
   
   
-  conditions <- sapply(strsplit(grep('^GIS',colnames(gi_data),val=T),split='\\.'),function(x){x[2]})
+  conditions <-
+    sapply(strsplit(grep('^GIS', colnames(gi_data), val = T), split = '\\.'), function(x) {
+      x[2]
+    })
   
   
   ret_list <- list()
   ret_df <- c()
   
   
-  eyo <- c()
-  gyo <- c()
+  #eyo <- c()
+  #gyo <- c()
   for(condition1 in conditions) {
     ret_list[[condition1]] <- list()
     for (condition2 in conditions) {
@@ -72,28 +80,32 @@ differential_gi_analysis <- function(gi_data,
         
         
         #nn_pairs <- (gi_data[,z_class_name1] == 'NEUTRAL' & gi_data[,z_class_name2] == 'NEUTRAL')# | (gi_data$Type_of_gene_i != 'DNA_repair' | gi_data$Type_of_gene_y != 'DNA_repair')
-        nn_pairs <- (gi_data$Type_of_gene_x != 'DNA_repair' | gi_data$Type_of_gene_y != 'DNA_repair')
+        #nn_pairs <- (gi_data$Type_of_gene_x != 'DNA_repair' | gi_data$Type_of_gene_y != 'DNA_repair')
         
+  
         nn_z_scores_cond <-
-          (gi_data[nn_pairs, gi_name1] - gi_data[nn_pairs, gi_name2])/sqrt(gi_data[nn_pairs, gi_err_name1]^2 + gi_data[nn_pairs, gi_err_name2]^2)
+          (gi_data[nn_pairs, gi_name1] - gi_data[nn_pairs, gi_name2]) /
+          sqrt(gi_data[nn_pairs, gi_err_name1] ^ 2 + gi_data[nn_pairs, gi_err_name2] ^
+                 2)
         nn_gi_scores_cond <-
           gi_data[nn_pairs, gi_name1] - gi_data[nn_pairs, gi_name2]
         
-         
+        
         non_nn_z_scores_cond <-
-          (gi_data[!nn_pairs, gi_name1] - gi_data[!nn_pairs, gi_name2])/sqrt(gi_data[!nn_pairs, gi_err_name1]^2 + gi_data[!nn_pairs, gi_err_name2]^2)
+          (gi_data[!nn_pairs, gi_name1] - gi_data[!nn_pairs, gi_name2]) /
+          sqrt(gi_data[!nn_pairs, gi_err_name1] ^ 2 + gi_data[!nn_pairs, gi_err_name2] ^
+                 2)
         non_nn_gi_scores_cond <-
           gi_data[!nn_pairs, gi_name1] - gi_data[!nn_pairs, gi_name2]
         
-        eyo <- c(eyo,sqrt(gi_data[!nn_pairs, gi_err_name1]^2 + gi_data[!nn_pairs, gi_err_name2]^2))
-        gyo <- c(gyo,abs((gi_data[!nn_pairs, gi_name1] - gi_data[!nn_pairs, gi_name2])))
+        #eyo <- c(eyo,sqrt(gi_data[!nn_pairs, gi_err_name1]^2 + gi_data[!nn_pairs, gi_err_name2]^2))
+        #gyo <- c(gyo,abs((gi_data[!nn_pairs, gi_name1] - gi_data[!nn_pairs, gi_name2])))
         #stop()
         
         all_z_scores_cond <-
           (gi_data[, gi_name1] - gi_data[, gi_name2])/sqrt(gi_data[, gi_err_name1]^2 + gi_data[, gi_err_name2]^2)
         all_gi_scores_cond <-
           gi_data[, gi_name1] - gi_data[, gi_name2]
-        
         
         
         nn_scores_cond <- nn_z_scores_cond
@@ -146,7 +158,8 @@ differential_gi_analysis <- function(gi_data,
         }
         
         
-        #Hacky loop
+        #This whole loop actually no longer required because of two-tailed p-value calc
+        #Left in because doesn't add much computational time
         unequal_tests <- c(`>=`, `<=`)
         precision_list <- lapply(unequal_tests, function(unequal_test) {
           mu <- mean(nn_scores_cond)
@@ -172,12 +185,13 @@ differential_gi_analysis <- function(gi_data,
             return(min(c(p_val,1 - p_val))*2)
           })
         })
+        
+        
         p_values_pos <- precision_list[[1]]
         p_values_neg <- precision_list[[2]]
         comb_p_values <- cbind(p_values_pos, p_values_pos)
         
-        #Return positive or negative p-value based on the nominal sign
-        #of the interaction
+        
         p_values <- sapply(1:nrow(comb_p_values), function(i) {
           if (all_scores_cond[i] < 0) {
             return(p_values_neg[i])
