@@ -125,7 +125,6 @@ for(i in 1:length(to_analyze)){
   
   gi_data_combined <- rbind(gi_data_combined,new_gis)
 }
-stop()
 
 
 
