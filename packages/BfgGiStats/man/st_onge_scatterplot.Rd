@@ -22,4 +22,3 @@ st_onge_scatterplot(gi_data, control_name = "NoDrug",
 \description{
 Creates a scatterplot of genetic interaction scores vs St. Onge
 }
-

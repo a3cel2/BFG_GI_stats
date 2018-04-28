@@ -28,4 +28,3 @@ a data frame with differential genetic interaction comparisons, conditions pairs
 \description{
 Differential Genetic Interaction analysis
 }
-

@@ -25,4 +25,3 @@ NULL, makes a plot
 \description{
 Make a histogram of GIS vs physical distance
 }
-

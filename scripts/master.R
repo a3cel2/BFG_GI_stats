@@ -38,7 +38,7 @@ setwd('../data')
 
 #Read in genetic interaction data from two tables, using sum column from second table
 gi_data_original <-
-  read.table('table_s2.txt',
+  read.table('table_ev2.txt',
              head = T,
              stringsAsFactors = F)
 
@@ -330,6 +330,8 @@ st_onge_auc_plot(gi_data)
 dev.off()
 
 
+
+
 #Update calls based on 1% FDR cutoffs
 #Effect size cutoffs are 
 gi_data <- update_calls(
@@ -362,14 +364,14 @@ write.table(
   row.names = F,
   quote = F,
   sep = '\t',
-  file = 'table_s3.txt'
+  file = 'table_ev3.txt'
 )
 write.table(
   gi_data,
   row.names = F,
   quote = F,
   sep = '\t',
-  file = 'table_s4.txt'
+  file = 'table_ev4.txt'
 )
 
 ##Make/write differential calls
@@ -407,7 +409,7 @@ write.table(
   row.names = F,
   quote = F,
   sep = '\t',
-  file = 'table_s5.tsv'
+  file = 'table_ev6.tsv'
 )
 
 
@@ -441,7 +443,7 @@ write.table(
   row.names = F,
   quote = F,
   sep = '\t',
-  file = 'table_s6.txt'
+  file = 'table_ev5.txt'
 )
 
 

@@ -45,4 +45,3 @@ a version of gi_data with data from multiple barcodes combined for each gene
 \description{
 Combine data from multiple barcodes for each gene
 }
-

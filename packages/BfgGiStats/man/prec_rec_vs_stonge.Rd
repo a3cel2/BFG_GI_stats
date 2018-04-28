@@ -99,4 +99,3 @@ NULL, makes a plot
 Plot two ROCR metrics simultaneously as a function of GIS cutoff
 (defaults to precision and recall)
 }
-

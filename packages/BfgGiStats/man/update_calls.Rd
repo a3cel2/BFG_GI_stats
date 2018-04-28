@@ -36,4 +36,3 @@ a version of gi_data with GI calls updated
 \description{
 Update genetic interaction calls based on either Z metrics or internal FDR
 }
-

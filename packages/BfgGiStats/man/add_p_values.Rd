@@ -26,4 +26,3 @@ gi_data with p values added
 \description{
 Adds p-value columns to the genetic interaction data
 }
-

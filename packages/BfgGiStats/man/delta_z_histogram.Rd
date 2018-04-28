@@ -22,4 +22,3 @@ NULL, makes a plot
 \description{
 Histogram of differential interaction effect sizes for neutral and DDR pairs
 }
-

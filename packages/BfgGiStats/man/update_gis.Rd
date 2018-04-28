@@ -22,4 +22,3 @@ an updated gi_data
 \description{
 Update BFG-GI genetic interaction data
 }
-
